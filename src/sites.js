@@ -119,7 +119,7 @@ function hipRoof(w, d, h, color = '#3d4247') {
 }
 
 // 한옥 건물: 기단 + 기둥 + 단청 보 + 지붕
-function hanok(w, d, colH, { walls = false, roofColor, pillar = '#8b3a2b' } = {}) {
+export function hanok(w, d, colH, { walls = false, roofColor, pillar = '#8b3a2b' } = {}) {
   const g = new THREE.Group();
   const base = new THREE.Mesh(new THREE.BoxGeometry(w + 1.2, 0.8, d + 1.2), new THREE.MeshLambertMaterial({ color: '#a39d91' }));
   base.position.y = 0.4; base.receiveShadow = true; base.castShadow = true;

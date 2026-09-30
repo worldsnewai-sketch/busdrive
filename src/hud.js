@@ -1,7 +1,8 @@
 // 화면 UI: 행선판, 미니맵, 스탬프, 안내판, 알림
 import { WORLD, coastX, smoothstep } from './geo.js';
 import { NX, NZ, heights, roadPaths } from './terrain.js';
-import { SITES, WALKWAYS } from './layout.js';
+import { SITES, WALKWAYS, DESTS, SHOP_SPOTS } from './layout.js';
+import { econ, SHOPS, SOUVENIRS, BUFFS, won } from './economy.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -65,10 +66,61 @@ export class Hud {
     $('arrow').style.color = site.color;
   }
 
-  setSpeed(kmh, gear, visible) {
-    $('speedo').hidden = !visible;
+  setSpeed(kmh, gear, driving) {
+    $('speedRow').hidden = !driving;
+    $('fuelRow').hidden = !driving;
+    $('paxRow').hidden = !driving;
+    $('stamRow').hidden = driving;
     $('kmh').textContent = Math.round(kmh);
     $('gear').textContent = gear;
+  }
+
+  setStatus(pax) {
+    $('money').textContent = won(econ.money);
+    const fb = $('fuelBar');
+    fb.style.width = `${econ.fuel}%`;
+    fb.classList.toggle('low', econ.fuel < 15);
+    const sb = $('stamBar');
+    sb.style.width = `${econ.stamina}%`;
+    sb.classList.toggle('low', econ.stamina < 20);
+    $('pax').textContent = `${pax}명`;
+    const b = Object.keys(econ.buffs).map((k) => `<span>${BUFFS[k].name} ${Math.ceil(econ.buffs[k])}초</span>`).join('');
+    if (b !== this._buffs) { $('buffs').innerHTML = b; this._buffs = b; }
+  }
+
+  openShop(shop, onBuy) {
+    $('shopName').textContent = shop.name;
+    $('shopLede').textContent = shop.lede;
+    const render = () => {
+      $('shopMoney').textContent = won(econ.money);
+      $('shopItems').innerHTML = '';
+      for (const it of shop.items) {
+        const li = document.createElement('li');
+        const owned = it.souvenir && econ.souvenirs.includes(it.id);
+        li.innerHTML = `<div class="nm">${it.name}${it.souvenir ? '<small>기념품</small>' : ''}</div><div class="ds">${it.desc}</div>`;
+        const b = document.createElement('button');
+        b.className = 'btn buy' + (owned ? '' : ' primary');
+        b.textContent = owned ? '가방에 있음' : won(it.price);
+        b.disabled = owned || econ.money < it.price;
+        if (!owned && econ.money < it.price) b.title = '동해페이가 모자라요';
+        b.onclick = () => { onBuy(it); render(); };
+        li.appendChild(b);
+        $('shopItems').appendChild(li);
+      }
+    };
+    render();
+    $('shop').hidden = false;
+  }
+
+  openBag() {
+    $('bagMoney').textContent = won(econ.money);
+    $('bagCount').textContent = `${econ.souvenirs.length} / ${SOUVENIRS.length}`;
+    $('bagItems').innerHTML = SOUVENIRS.map((s) => econ.souvenirs.includes(s.id)
+      ? `<div class="own"><b>${s.name}</b><span>${s.desc}</span></div>`
+      : `<div><b>???</b><span>${s.shop.name}에서 팔아요 · ${won(s.price)}</span></div>`).join('');
+    const st = econ.stats;
+    $('bagStats').innerHTML = `<div>태운 승객 <b>${st.passengers}명</b></div><div>달린 거리 <b>${st.km.toFixed(1)}km</b></div><div>번 돈 <b>${won(st.earned)}</b></div><div>쓴 돈 <b>${won(st.spent)}</b></div>`;
+    $('bag').hidden = false;
   }
 
   prompt(html) {
@@ -116,7 +168,20 @@ export class Hud {
   closeInfo() { this.infoOpenFor = null; $('info').hidden = true; }
 
   drawMarkers(g, tp, scale, player, heading, dest, labels) {
-    for (const s of SITES) {
+    // 가게: 작은 네모
+    for (const sh of SHOPS) {
+      const p = SHOP_SPOTS[sh.id];
+      const [x, y] = tp(p.x, p.z);
+      g.fillStyle = '#ffffff'; g.strokeStyle = '#0d1721'; g.lineWidth = 1.5 * scale;
+      g.fillRect(x - 3.5 * scale, y - 3.5 * scale, 7 * scale, 7 * scale);
+      g.strokeRect(x - 3.5 * scale, y - 3.5 * scale, 7 * scale, 7 * scale);
+      if (labels) {
+        g.font = `${12 * scale}px "Do Hyeon", sans-serif`;
+        g.fillStyle = '#ffffff';
+        g.fillText(sh.name, x + 8 * scale, y - 6 * scale);
+      }
+    }
+    for (const s of DESTS) {
       const [x, y] = tp(s.stop.x, s.stop.z);
       g.fillStyle = s.color;
       g.strokeStyle = '#0d1721'; g.lineWidth = 2 * scale;

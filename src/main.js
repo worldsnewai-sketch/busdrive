@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { clamp, lerp, coastX, smoothstep } from './geo.js';
 import { terrainHeight } from './terrain.js';
-import { SITES, MUREUNG, CHUAM } from './layout.js';
+import { SITES, DESTS, GAS, MUREUNG, CHUAM } from './layout.js';
 import { createEnvironment, createTerrain, createSea, createRoads, createTrees, createTown, createAmbient, createStopMarkers } from './world.js';
 import { buildSites, POIS } from './sites.js';
 import { labelTexture } from './textures.js';
@@ -12,6 +12,9 @@ import { Input } from './input.js';
 import { Sound } from './audio.js';
 import { Hud } from './hud.js';
 import { Autopilot } from './autopilot.js';
+import { econ, STAMP_REWARD, FUEL_PRICE, won } from './economy.js';
+import { buildShops } from './shops.js';
+import { Passengers, PAX_STOPS } from './passengers.js';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('c');
@@ -41,6 +44,9 @@ createTrees(scene, sites.clearZones);
 createTown(scene);
 const ambient = createAmbient(scene);
 const markers = createStopMarkers(scene, labelTexture);
+const shopSpots = buildShops(scene);
+const passengers = new Passengers(scene);
+econ.load();
 const bus = new Bus(scene);
 const walker = new Walker(scene);
 const input = new Input(canvas);
@@ -65,7 +71,11 @@ let timeAnim = null;          // 해돋이 연출
 let finishedShown = got.size >= POIS.length;
 let paused = false;
 let snapCam = false;
-let timeScale = 1;            // 배속 (1×, 2×, 4×)
+let timeScale = 1;
+let served = null;            // 이번 정차에서 승객을 이미 처리한 정류장
+let stopTimer = 0;
+let fuelWarned = false;
+let saveTimer = 0;            // 배속 (1×, 2×, 4×)
 const clock = new THREE.Clock();
 let elapsed = 0;
 
@@ -93,7 +103,7 @@ startBtn.onclick = () => {
   if (isTouch) $('touch').hidden = false;
   mode = 'drive';
   canvas.focus();
-  const d = SITES[destIdx];
+  const d = DESTS[destIdx];
   hud.toast(`<b>동해 시티투어 버스</b>를 출발합니다. 목적지: ${d.name}`, 'announce');
   sound.chime();
 };
@@ -111,8 +121,11 @@ $('bSound').onclick = () => {
   $('bSound').setAttribute('aria-pressed', String(sound.muted));
   $('bSound').textContent = sound.muted ? '×' : '♪';
 };
-$('led').onclick = () => setDest((destIdx + 1) % SITES.length);
+$('led').onclick = () => setDest((destIdx + 1) % DESTS.length);
 $('infoClose').onclick = () => hud.closeInfo();
+$('bBag').onclick = () => hud.openBag();
+$('bagClose').onclick = () => { $('bag').hidden = true; canvas.focus(); };
+$('shopClose').onclick = () => { $('shop').hidden = true; canvas.focus(); };
 $('finishClose').onclick = () => { $('finish').hidden = true; canvas.focus(); };
 
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -124,7 +137,7 @@ if (isTouch) {
 function toggleMap() {
   const bm = $('bigmap');
   bm.hidden = !bm.hidden;
-  if (!bm.hidden) hud.drawBigMap(playerPos(), heading(), SITES[destIdx]);
+  if (!bm.hidden) hud.drawBigMap(playerPos(), heading(), DESTS[destIdx]);
 }
 function toggleCam() {
   if (mode !== 'drive') return;
@@ -133,11 +146,11 @@ function toggleCam() {
 }
 function setDest(i) {
   destIdx = i;
-  hud.toast(`목적지를 <b>${SITES[i].name}</b>(으)로 바꿨어요`, 'announce');
-  if (pilot.active) pilot.start(bus, SITES[i].stop);
+  hud.toast(`목적지를 <b>${DESTS[i].name}</b>(으)로 바꿨어요`, 'announce');
+  if (pilot.active) pilot.start(bus, DESTS[i].stop);
 }
 function setPilot(on, msg) {
-  if (on) pilot.start(bus, SITES[destIdx].stop); else pilot.cancel();
+  if (on) pilot.start(bus, DESTS[destIdx].stop); else pilot.cancel();
   $('bAuto').setAttribute('aria-pressed', String(on));
   $('led').classList.toggle('auto', on);
   if (msg) hud.toast(msg, 'announce');
@@ -145,7 +158,7 @@ function setPilot(on, msg) {
 function togglePilot() {
   if (mode !== 'drive') { hud.toast('버스에 타야 자동운전을 쓸 수 있어요'); return; }
   if (pilot.active) setPilot(false, '자동운전을 껐어요');
-  else setPilot(true, `<b>자동운전</b>으로 ${SITES[destIdx].name}까지 갑니다. 방향키를 누르면 직접 운전으로 바뀌어요.`);
+  else setPilot(true, `<b>자동운전</b>으로 ${DESTS[destIdx].name}까지 갑니다. 방향키를 누르면 직접 운전으로 바뀌어요.`);
 }
 const SPEEDS = [1, 2, 4];
 function cycleSpeed() {
@@ -178,9 +191,9 @@ function getOn() {
   mode = 'drive';
   // 다음 목적지: 아직 스탬프가 남은 곳
   const next = SITES.findIndex((s) => s !== atStop && POIS.some((p) => p.site === s.id && !got.has(p.id)));
-  if (next >= 0 && SITES[destIdx] === atStop) destIdx = next;
+  if (next >= 0 && DESTS[destIdx] === atStop) destIdx = next;
   sound.tone(440, 0.2, 'triangle', 0.1);
-  hud.toast(`승차 완료. 다음 목적지: <b>${SITES[destIdx].name}</b>`, 'announce');
+  hud.toast(`승차 완료. 다음 목적지: <b>${DESTS[destIdx].name}</b>`, 'announce');
 }
 
 function busColliders() {
@@ -206,7 +219,8 @@ function collect(p) {
   save();
   sound.stamp();
   hud.renderStamps(POIS, got);
-  hud.toast(`<b>스탬프 획득</b> · ${p.title} (${got.size}/${POIS.length})`, 'stamp');
+  econ.earn(STAMP_REWARD);
+  hud.toast(`<b>스탬프 획득</b> · ${p.title} (${got.size}/${POIS.length}) · 동해페이 +${won(STAMP_REWARD)}`, 'stamp');
   hud.openInfo(p, siteOf(p.site).name, infoActions(p));
   if (got.size >= POIS.length && !finishedShown) {
     finishedShown = true;
@@ -297,12 +311,17 @@ function step(dt) {
   }
 
   // 공통 키
-  const modalOpen = !$('help').hidden || !$('finish').hidden;
+  if (input.pressed('Escape')) { $('shop').hidden = true; $('bag').hidden = true; }
+  if (!$('bag').hidden && input.pressed('KeyB')) { $('bag').hidden = true; input.pressedQ.delete('KeyB'); }
+  const modalOpen = !$('help').hidden || !$('finish').hidden || !$('shop').hidden || !$('bag').hidden;
   if (mode !== 'title' && !modalOpen) {
     if (input.pressed('KeyM')) toggleMap();
     if (input.pressed('Digit1')) setDest(0);
     if (input.pressed('Digit2')) setDest(1);
     if (input.pressed('Digit3')) setDest(2);
+    if (input.pressed('Digit4')) setDest(3);
+    if (input.pressed('Digit5')) setDest(4);
+    if (input.pressed('KeyB')) { if ($('bag').hidden) hud.openBag(); else $('bag').hidden = true; }
     if (input.pressed('KeyC')) toggleCam();
     if (input.pressed('KeyP')) togglePilot();
     if (input.pressed('KeyF')) cycleSpeed();
@@ -323,11 +342,34 @@ function step(dt) {
       if (manual) setPilot(false, '직접 운전으로 바꿨어요');
       else if (!paused) {
         control = pilot.drive(bus, dt);
-        if (control.arrived) setPilot(false, `자동운전으로 <b>${SITES[destIdx].name}</b>에 도착했어요`);
+        if (control.arrived) setPilot(false, `자동운전으로 <b>${DESTS[destIdx].name}</b>에 도착했어요`);
       }
     }
+    control.limp = econ.fuel <= 0;
+    const bx = bus.x, bz = bus.z;
     const hit = bus.update(paused ? 0 : dt, control);
-    if (hit) sound.thud();
+    if (hit) { sound.thud(); econ.bumps++; }
+    econ.tick(paused ? 0 : dt, { driving: true, meters: Math.hypot(bus.x - bx, bus.z - bz) });
+    if (econ.fuel < 15 && !fuelWarned) { fuelWarned = true; hud.toast('연료가 얼마 남지 않았어요. <b>5</b>번 목적지 주유소로 가세요', 'money'); }
+    if (econ.fuel >= 15) fuelWarned = false;
+
+    // 정류장에 멈추면 승객이 내리고 탄다
+    const ps = PAX_STOPS.find((d) => Math.hypot(bus.x - d.stop.x, bus.z - d.stop.z) < 16);
+    if (ps && Math.abs(bus.speed) < 1) stopTimer += dt; else stopTimer = 0;
+    if (!ps) served = null;
+    if (ps && served !== ps.id && stopTimer > 0.8) {
+      served = ps.id;
+      const r = passengers.serve(ps.id);
+      if (r.off || r.on) {
+        const parts = [];
+        if (r.off) parts.push(`${r.off}명 하차 · 동해페이 <b>+${won(r.fare)}</b>${r.tipped ? ` (팁 ${r.tipped}명)` : ''}`);
+        if (r.on) parts.push(`${r.on}명 승차`);
+        hud.toast(parts.join(' / '), 'money');
+        if (r.fare) sound.stamp();
+      }
+    }
+    // 주유소
+    const atGas = Math.hypot(bus.x - GAS.x, bus.z - GAS.z) < 13;
     if (!paused && input.pressed('KeyH')) sound.horn();
     const ns = nearestSite(bus.x, bus.z);
     atStop = ns.dist < 16 ? ns.site : null;
@@ -339,6 +381,18 @@ function step(dt) {
     if (!atStop && ns.dist > 40) lastAnnounced = null;
     if (pilot.active) {
       hint = '자동운전 중 · <kbd>P</kbd> 또는 방향키로 해제';
+    } else if (atGas) {
+      const need = Math.ceil(100 - econ.fuel);
+      if (need <= 0) hint = '연료가 가득 차 있어요';
+      else if (Math.abs(bus.speed) >= 1.5) hint = '주유소입니다. 버스를 멈추세요';
+      else {
+        hint = `<kbd>E</kbd> 주유하기 · ${need}% ${won(need * FUEL_PRICE)}`;
+        if (input.pressed('KeyE')) {
+          const got2 = econ.refuel();
+          if (got2) { hud.toast(`연료 ${got2}% 주유 · 동해페이 -${won(got2 * FUEL_PRICE)}`, 'money'); sound.chime(); }
+          else hud.toast('동해페이가 모자라요. 승객을 태우거나 스탬프를 모아 보세요');
+        }
+      }
     } else if (atStop) {
       if (Math.abs(bus.speed) < 1.5) {
         hint = `<kbd>E</kbd> 내려서 ${atStop.name} 구경하기`;
@@ -347,11 +401,15 @@ function step(dt) {
     } else if (input.pressed('KeyE')) {
       hud.toast('빛기둥이 서 있는 관광지 정류장에 멈추면 내릴 수 있어요');
     }
+    if (econ.fuel <= 0 && !pilot.active) hint = hint || '연료가 떨어져 천천히만 달려요. 주유소(5번)로 가세요';
     const gear = bus.speed < -0.3 ? 'R' : Math.abs(bus.speed) < 0.3 ? 'N' : 'D';
     hud.setSpeed(bus.kmh(), gear, true);
     $('tSpace').textContent = '정지';
   } else if (mode === 'walk') {
-    walker.update(paused ? 0 : dt, { x: ax.x, y: ax.y, run: input.held('ShiftLeft', 'ShiftRight'), jump: !paused && input.pressed('Space') }, camYaw, busColliders());
+    const wantRun = input.held('ShiftLeft', 'ShiftRight') || Math.hypot(ax.x, ax.y) > 0.95 && input.joy.active;
+    const canRun = econ.stamina > 2 || econ.buff('full');
+    walker.update(paused ? 0 : dt, { x: ax.x, y: ax.y, run: wantRun && canRun, mult: econ.buff('caffeine') ? 1.35 : 1, jump: !paused && input.pressed('Space') }, camYaw, busColliders());
+    econ.tick(paused ? 0 : dt, { walking: walker.speedNow > 0, running: walker.running });
     hud.setSpeed(0, '', false);
     $('tSpace').textContent = '점프';
     // 가장 가까운 상호작용
@@ -368,9 +426,19 @@ function step(dt) {
       const p = POIS.find((q) => q.id === hud.infoOpenFor);
       if (Math.hypot(walker.x - p.x, walker.z - p.z) > p.r + 6) hud.closeInfo();
     }
+    const shopNear = shopSpots.find((sp) => Math.hypot(walker.x - sp.x, walker.z - sp.z) < 4.5);
     if (dDoor < 5) {
       hint = '<kbd>E</kbd> 버스 타기';
       if (input.pressed('KeyE')) getOn();
+    } else if (shopNear) {
+      hint = `<kbd>E</kbd> 들어가기 · ${shopNear.shop.name}`;
+      if (input.pressed('KeyE')) {
+        hud.closeInfo();
+        hud.openShop(shopNear.shop, (it) => {
+          const msg = econ.buy(it);
+          if (msg) { hud.toast(`${msg} · 동해페이 -${won(it.price)}`, 'money'); sound.stamp(); }
+        });
+      }
     } else if (near) {
       if (hud.infoOpenFor !== near.id) {
         hint = `<kbd>E</kbd> 안내판 읽기 · ${near.title}`;
@@ -379,14 +447,21 @@ function step(dt) {
     }
   }
   hud.prompt(mode === 'title' || paused ? null : hint);
+  if (mode !== 'title') hud.setStatus(passengers.onboard.length);
+  if (mode === 'title' || paused) econ.tick(0, {});
+  passengers.update(paused ? 0 : dt, elapsed);
+  saveTimer += dt;
+  if (saveTimer > 5) { saveTimer = 0; econ.save(); }
 
   // 목적지 안내
-  const dest = SITES[destIdx];
+  const dest = DESTS[destIdx];
   const pp = playerPos();
   if (mode !== 'title') {
     const dx = dest.stop.x - pp.x, dz = dest.stop.z - pp.z;
     let rel = Math.atan2(dx, dz) - heading();
     hud.setDest(dest, Math.hypot(dx, dz), rel);
+    const n = passengers.countFor(dest.id);
+    $('destPax').textContent = n ? `· 하차 ${n}명` : '';
     if ((Math.floor(elapsed * 10) & 1) === 0) hud.drawMinimap(pp, heading(), dest, pilot.active ? pilot.path : null);
   }
 

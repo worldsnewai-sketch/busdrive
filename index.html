@@ -63,6 +63,38 @@ button:focus-visible { outline: 2px solid var(--led); outline-offset: 2px; }
 #speedo .v { font-family: var(--display); font-size: 44px; line-height: 1; color: var(--led); font-variant-numeric: tabular-nums; text-shadow: 0 0 10px color-mix(in srgb, var(--led) 50%, transparent); }
 #speedo .u { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 10px; }
 #speedo .u i { font-style: normal; color: var(--paper); }
+#speedo .meters { display: grid; gap: 4px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line); font-size: 12px; min-width: 150px; }
+#speedo .m { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted); }
+#speedo .m b { color: var(--paper); font-weight: 600; font-variant-numeric: tabular-nums; }
+#speedo .m.money b { color: var(--led); font-family: var(--display); font-weight: 400; font-size: 17px; }
+#speedo .bar { flex: 1; max-width: 90px; height: 7px; border-radius: 4px; background: var(--ink-2); border: 1px solid var(--line); overflow: hidden; display: block; }
+#speedo .bar > i { display: block; height: 100%; width: 100%; background: var(--pine); transition: width .3s; }
+#speedo .bar > i.low { background: #ff6b5a; }
+#speedo #speedRow[hidden] + .meters { margin-top: 0; padding-top: 0; border-top: 0; }
+#buffs { display: flex; flex-wrap: wrap; gap: 4px; }
+#buffs span { font-size: 11px; padding: 1px 6px; border-radius: 10px; background: color-mix(in srgb, var(--led) 20%, transparent); color: var(--led); }
+.toast.money { border-color: var(--led); }
+.toast.money b { color: var(--led); font-family: var(--display); font-weight: 400; font-size: 18px; }
+
+/* 가게 / 가방 */
+.shop h2 { margin-bottom: 4px; }
+.shop .sub { color: var(--muted); margin: 0 0 12px; font-size: 14px; line-height: 1.5; }
+.shop .bal { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0 10px; border-bottom: 1px solid var(--line); margin-bottom: 6px; font-size: 13px; color: var(--muted); }
+.shop .bal b { font-family: var(--display); font-weight: 400; font-size: 22px; color: var(--led); }
+.items { list-style: none; margin: 0 0 14px; padding: 0; display: grid; }
+.items li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+.items .nm { font-weight: 600; font-size: 15px; }
+.items .nm small { font-weight: 400; font-size: 11px; color: var(--pine); border: 1px solid var(--pine); border-radius: 8px; padding: 0 5px; margin-left: 6px; vertical-align: 2px; }
+.items .ds { grid-column: 1; font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+.items .buy { grid-row: 1 / span 2; grid-column: 2; min-width: 92px; font-variant-numeric: tabular-nums; }
+.items .buy:disabled { opacity: .45; cursor: default; }
+.bag-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 0 0 14px; }
+.bag-grid div { border: 1px dashed var(--line); border-radius: 8px; padding: 8px 10px; font-size: 13px; min-width: 0; }
+.bag-grid div.own { border-style: solid; border-color: var(--pine); }
+.bag-grid b { display: block; font-size: 14px; }
+.bag-grid span { color: var(--muted); font-size: 12px; }
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 14px; font-size: 13px; color: var(--muted); margin: 0 0 14px; }
+.stats b { color: var(--paper); font-variant-numeric: tabular-nums; }
 
 /* 행동 안내 */
 #prompt { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); padding: 10px 16px; font-size: 16px; display: flex; gap: 10px; align-items: center; white-space: nowrap; }
@@ -123,6 +155,7 @@ kbd { font-family: var(--display); background: var(--paper); color: var(--ink); 
   #led .dest b { font-size: 18px; }
   #speedo { bottom: auto; top: calc(78px + env(safe-area-inset-top, 0px)); padding: 6px 10px; min-width: 0; }
   #speedo .v { font-size: 30px; }
+  #speedo .meters { min-width: 120px; }
 }
 
 /* 터치 조작 */
@@ -149,6 +182,9 @@ body.touch #toasts { top: auto; bottom: calc(180px + env(safe-area-inset-bottom,
   body.touch #toasts { bottom: auto; top: calc(12px + env(safe-area-inset-top, 0px)); width: min(46vw, 420px); }
   body.touch #prompt { top: auto; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
   body.touch #info { top: calc(12px + env(safe-area-inset-top, 0px)); right: auto; left: 50%; transform: translateX(-50%); max-height: calc(100vh - 110px); width: min(420px, 60vw); }
+  #speedo { padding: 5px 10px; }
+  #speedo .v { font-size: 26px; }
+  #speedo .meters { min-width: 120px; gap: 2px; margin-top: 4px; padding-top: 4px; }
   #joy { width: 110px; height: 110px; }
   #tbtns { grid-template-columns: repeat(4, 56px); }
   #tbtns button { width: 56px; height: 56px; font-size: 13px; }
@@ -162,7 +198,7 @@ body.touch #toasts { top: auto; bottom: calc(180px + env(safe-area-inset-bottom,
 <div id="hud" hidden>
   <div id="led" class="panel" title="클릭하거나 1·2·3 키로 목적지 변경">
     <div class="route"><span class="r1">시티<br>투어</span><span class="r2">자동<br>운전</span></div>
-    <div class="dest"><small>다음 목적지<span class="keyhint"> · 1 2 3 으로 변경</span></small><b id="destName">추암 촛대바위</b></div>
+    <div class="dest"><small>다음 목적지<span class="keyhint"> · 1~5로 변경</span> <span id="destPax"></span></small><b id="destName">추암 촛대바위</b></div>
     <div class="nav"><svg id="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L20 20 L12 15 L4 20 Z" fill="currentColor"/></svg><span id="destDist">0.0km</span></div>
   </div>
 
@@ -174,12 +210,22 @@ body.touch #toasts { top: auto; bottom: calc(180px + env(safe-area-inset-bottom,
       <button id="bAuto" title="자동운전 (P)" aria-pressed="false">자동</button>
       <button id="bFast" title="배속 (F)" aria-pressed="false" aria-label="배속">1×</button>
       <button id="bCam" title="시점 전환 (C)" aria-label="시점 전환">시점</button>
+      <button id="bBag" title="여행 가방 (B)">가방</button>
       <button id="bSound" title="소리 켜기/끄기" aria-pressed="false" aria-label="소리 끄기">♪</button>
       <button id="bHelp" title="조작법" aria-label="조작법">?</button>
     </div>
   </div>
 
-  <div id="speedo" class="panel"><div class="v" id="kmh">0</div><div class="u"><span>km/h</span><i id="gear">P</i></div></div>
+  <div id="speedo" class="panel">
+    <div id="speedRow"><div class="v" id="kmh">0</div><div class="u"><span>km/h</span><i id="gear">P</i></div></div>
+    <div class="meters">
+      <div class="m money"><span>동해페이</span><b id="money">10,000원</b></div>
+      <div class="m" id="fuelRow"><span>연료</span><i class="bar"><i id="fuelBar"></i></i></div>
+      <div class="m" id="paxRow"><span>승객</span><b id="pax">0명</b></div>
+      <div class="m" id="stamRow" hidden><span>체력</span><i class="bar"><i id="stamBar"></i></i></div>
+      <div id="buffs"></div>
+    </div>
+  </div>
   <div id="prompt" class="panel" hidden></div>
   <div id="toasts" aria-live="polite"></div>
 
@@ -227,13 +273,43 @@ body.touch #toasts { top: auto; bottom: calc(180px + env(safe-area-inset-bottom,
       <dt>마우스 드래그 · 휠</dt><dd>시점 돌리기 · 확대/축소</dd>
       <dt><kbd>E</kbd></dt><dd>안내판 읽기 · 버스 타기</dd>
     </dl>
+    <h3>동해페이</h3>
+    <dl class="keys">
+      <dt>승객 태우기</dt><dd>정류장(관광지 3곳, 터미널)에 멈추면 기다리던 승객이 타고, 목적지에서 내리며 요금 1,500원을 내요. 한 번도 부딪히지 않았다면 팁 500원을 더 줘요.</dd>
+      <dt>스탬프</dt><dd>새 스탬프마다 3,000원</dd>
+      <dt>가게</dt><dd>카페·매점·식당 앞에서 <kbd>E</kbd>. 음료와 음식은 체력과 속도를 올려 주고, 기념품은 여행 가방(<kbd>B</kbd>)에 모여요.</dd>
+      <dt>연료</dt><dd>1km에 20%씩 줄어요. 다 떨어지면 시속 11km로만 달려요. 주유소(<kbd>5</kbd>번 목적지)에 멈춰 <kbd>E</kbd>로 주유해요.</dd>
+    </dl>
     <h3>기타</h3>
     <dl class="keys">
-      <dt><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></dt><dd>목적지 선택 (묵호 · 추암 · 무릉계곡)</dd>
+      <dt><kbd>1</kbd> ~ <kbd>5</kbd></dt><dd>목적지 선택 (묵호 · 추암 · 무릉계곡 · 터미널 · 주유소)</dd>
+      <dt><kbd>B</kbd></dt><dd>여행 가방 (기념품, 여행 기록)</dd>
       <dt><kbd>M</kbd></dt><dd>큰 지도</dd>
       <dt><kbd>F</kbd></dt><dd>배속 1× → 2× → 4×</dd>
     </dl>
     <button class="btn primary" id="helpClose">닫기</button>
+  </div>
+</div>
+
+<div id="shop" class="overlay" hidden>
+  <div class="sheet panel shop">
+    <h2 id="shopName"></h2>
+    <p class="sub" id="shopLede"></p>
+    <div class="bal"><span>내 동해페이</span><b id="shopMoney"></b></div>
+    <ul class="items" id="shopItems"></ul>
+    <button class="btn primary" id="shopClose">나가기</button>
+  </div>
+</div>
+
+<div id="bag" class="overlay" hidden>
+  <div class="sheet panel shop">
+    <h2>여행 가방</h2>
+    <div class="bal"><span>동해페이 잔액</span><b id="bagMoney"></b></div>
+    <h3>기념품 <span id="bagCount"></span></h3>
+    <div class="bag-grid" id="bagItems"></div>
+    <h3>여행 기록</h3>
+    <div class="stats" id="bagStats"></div>
+    <button class="btn primary" id="bagClose">닫기</button>
   </div>
 </div>
 
@@ -249,7 +325,7 @@ body.touch #toasts { top: auto; bottom: calc(180px + env(safe-area-inset-bottom,
   <div class="card">
     <span class="ledsign">동해 시티투어 · 순환 노선</span>
     <h1>동해 버스 투어</h1>
-    <p class="lede">시티투어 버스를 직접 몰고 동해안을 달려요. 빛기둥이 서 있는 정류장에 버스를 세우고 내리면, 걸어 다니며 관광지를 구경하고 안내판 스탬프를 모을 수 있어요.</p>
+    <p class="lede">시티투어 버스를 직접 몰고 동해안을 달려요. 빛기둥이 서 있는 정류장에 버스를 세우고 내리면, 걸어 다니며 관광지를 구경하고 안내판 스탬프를 모을 수 있어요. 승객을 태워 번 동해페이로 카페에서 커피를 마시고, 기념품도 사 보세요.</p>
     <ol>
       <li class="panel" style="--c:#ff8a3d"><b>묵호 도째비골·논골담길</b><span>벽화 골목, 묵호등대, 유리 바닥 스카이워크, 바다 위 해랑전망대</span></li>
       <li class="panel" style="--c:#ffc23d"><b>추암 촛대바위</b><span>애국가 일출 명소, 출렁다리, 고려 때 정자 해암정</span></li>
