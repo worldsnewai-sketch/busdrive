@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>동해 버스 투어</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;600&display=swap">
+<style>
+/* 레이아웃: 화면 전체 3D 캔버스 위에 버스 계기판처럼 모서리에 붙는 HUD */
+:root {
+  --ink: #0d1721;        /* 패널 바탕 */
+  --ink-2: #16283a;      /* 패널 안쪽 */
+  --line: #2b4257;       /* 경계선 */
+  --led: #ffb020;        /* 버스 LED 행선판 호박색 */
+  --sea: #3aa0d8;        /* 동해 바다 */
+  --pine: #6fd6a0;       /* 해송/스탬프 완료 */
+  --paper: #f3f1ea;      /* 본문 글자 */
+  --muted: #93a7b8;      /* 보조 글자 */
+  --display: "Do Hyeon", "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; margin: 0; overflow: hidden; background: var(--ink); color: var(--paper); font-family: var(--body); }
+canvas#c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
+[hidden] { display: none !important; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--led); outline-offset: 2px; }
+
+.panel { background: color-mix(in srgb, var(--ink) 88%, transparent); border: 1px solid var(--line); border-radius: 10px; backdrop-filter: blur(6px); }
+
+/* LED 행선판 */
+#led { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); left: 12px; display: flex; align-items: stretch; gap: 0; padding: 0; overflow: hidden; max-width: calc(100vw - 24px - 150px); }
+#led .route { background: var(--led); color: var(--ink); font-family: var(--display); font-size: 15px; padding: 8px 10px; display: grid; place-items: center; line-height: 1.05; text-align: center; }
+#led .route .r2 { display: none; }
+#led.auto .route { background: var(--pine); display: grid; }
+#led.auto .route .r1 { display: none; }
+#led.auto .route .r2 { display: inline; }
+#led .dest { padding: 7px 12px; display: grid; gap: 2px; min-width: 0; cursor: pointer; }
+#led .dest small { color: var(--muted); font-size: 11px; letter-spacing: .06em; }
+#led .dest b { font-family: var(--display); font-weight: 400; font-size: 22px; color: var(--led); text-shadow: 0 0 8px color-mix(in srgb, var(--led) 60%, transparent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#led .nav { display: flex; align-items: center; gap: 8px; padding: 0 12px 0 4px; font-variant-numeric: tabular-nums; font-family: var(--display); font-size: 18px; color: var(--paper); }
+#arrow { width: 26px; height: 26px; transition: transform .1s linear; }
+
+/* 오른쪽 위: 지도와 스탬프 */
+#side { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); right: 12px; display: grid; gap: 8px; justify-items: end; }
+#minimap { width: 150px; height: 150px; border-radius: 50%; border: 2px solid var(--line); background: var(--ink-2); display: block; cursor: pointer; }
+#stamps { padding: 8px 10px; display: grid; gap: 6px; min-width: 150px; box-sizing: border-box; }
+#stamps .head { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+#stamps .head b { color: var(--paper); font-family: var(--display); font-weight: 400; font-size: 16px; font-variant-numeric: tabular-nums; }
+#stamps .row { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+#stamps .row span.n { flex: 1; color: var(--muted); }
+#stamps .dots { display: flex; gap: 3px; }
+#stamps .dot { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--line); }
+#stamps .dot.on { background: var(--pine); border-color: var(--pine); }
+#tools { display: flex; gap: 6px; }
+#tools button { min-width: 36px; padding: 0 8px; white-space: nowrap; height: 36px; border-radius: 8px; border: 1px solid var(--line); background: var(--ink); font-size: 15px; font-family: var(--display); }
+#tools button[aria-pressed="true"] { color: var(--led); border-color: var(--led); }
+
+/* 속도계 */
+#speedo { position: fixed; left: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); padding: 8px 14px 10px; display: grid; gap: 0; min-width: 110px; }
+#speedo .v { font-family: var(--display); font-size: 44px; line-height: 1; color: var(--led); font-variant-numeric: tabular-nums; text-shadow: 0 0 10px color-mix(in srgb, var(--led) 50%, transparent); }
+#speedo .u { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 10px; }
+#speedo .u i { font-style: normal; color: var(--paper); }
+
+/* 행동 안내 */
+#prompt { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); padding: 10px 16px; font-size: 16px; display: flex; gap: 10px; align-items: center; white-space: nowrap; }
+kbd { font-family: var(--display); background: var(--paper); color: var(--ink); border-radius: 5px; padding: 1px 8px; font-size: 15px; box-shadow: 0 2px 0 var(--muted); }
+
+#toasts { position: fixed; top: calc(84px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); display: grid; gap: 6px; justify-items: center; pointer-events: none; width: min(92vw, 520px); }
+.toast { padding: 10px 16px; font-size: 15px; text-align: center; animation: pop 4.2s ease forwards; }
+.toast.announce { border-color: var(--led); }
+.toast.announce b { color: var(--led); font-family: var(--display); font-weight: 400; font-size: 18px; }
+.toast.stamp { border-color: var(--pine); }
+.toast.stamp b { color: var(--pine); }
+@keyframes pop { 0% { opacity: 0; transform: translateY(-8px); } 8% { opacity: 1; transform: none; } 85% { opacity: 1; } 100% { opacity: 0; } }
+
+/* 안내판 내용 */
+#info { position: fixed; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); width: min(380px, calc(100vw - 24px)); max-height: 56vh; overflow: auto; padding: 16px 18px 18px; box-sizing: border-box; }
+#info .eyebrow { font-size: 11px; letter-spacing: .12em; color: var(--led); text-transform: uppercase; }
+#info h2 { font-family: var(--display); font-weight: 400; font-size: 28px; margin: 4px 0 10px; text-wrap: balance; }
+#info p { margin: 0 0 10px; line-height: 1.65; font-size: 14.5px; color: color-mix(in srgb, var(--paper) 90%, var(--muted)); }
+#info .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.btn { border: 1px solid var(--line); background: var(--ink-2); border-radius: 8px; padding: 8px 14px; font-size: 14px; }
+.btn.primary { background: var(--led); color: var(--ink); border-color: var(--led); font-weight: 600; }
+#info .close { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 8px; border: 0; background: transparent; font-size: 20px; color: var(--muted); }
+
+/* 큰 지도 / 도움말 / 완주 */
+.overlay { position: fixed; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--ink) 70%, transparent); padding: 16px; box-sizing: border-box; }
+#bigmap canvas { max-width: 100%; max-height: calc(100vh - 110px); border-radius: 10px; border: 1px solid var(--line); background: var(--ink-2); }
+#bigmap .wrap { display: grid; gap: 10px; justify-items: center; }
+#bigmap p { margin: 0; color: var(--muted); font-size: 13px; }
+.sheet { padding: 22px 24px; width: min(560px, 100%); box-sizing: border-box; max-height: calc(100vh - 32px); overflow: auto; }
+.sheet h2 { font-family: var(--display); font-weight: 400; font-size: 28px; margin: 0 0 12px; }
+.keys { display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; align-items: center; font-size: 14px; margin: 0 0 14px; }
+.keys dt { white-space: nowrap; }
+.keys dd { margin: 0; color: var(--muted); }
+.sheet h3 { font-size: 13px; letter-spacing: .08em; color: var(--led); margin: 14px 0 8px; font-weight: 600; }
+
+/* 타이틀 */
+#title { position: fixed; inset: 0; display: grid; align-items: end; padding: 16px; box-sizing: border-box; background: linear-gradient(180deg, transparent 30%, color-mix(in srgb, var(--ink) 85%, transparent) 75%); }
+#title .card { max-width: 760px; width: 100%; margin: 0 auto; display: grid; gap: 14px; padding-bottom: env(safe-area-inset-bottom, 0px); }
+#title .ledsign { display: inline-flex; align-self: start; justify-self: start; background: #000; color: var(--led); font-family: var(--display); padding: 6px 12px; border-radius: 6px; font-size: 15px; letter-spacing: .08em; text-shadow: 0 0 8px var(--led); }
+#title h1 { font-family: var(--display); font-weight: 400; font-size: clamp(44px, 9vw, 84px); line-height: .95; margin: 0; letter-spacing: -0.01em; text-shadow: 0 4px 30px rgba(0,0,0,.4); }
+#title .lede { margin: 0; font-size: 16px; line-height: 1.6; max-width: 58ch; color: color-mix(in srgb, var(--paper) 88%, var(--muted)); }
+#title ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+#title li { padding: 10px 12px; min-width: 0; border-top: 3px solid var(--c); }
+#title li b { font-family: var(--display); font-weight: 400; font-size: 19px; display: block; }
+#title li span { font-size: 12.5px; color: var(--muted); line-height: 1.45; display: block; margin-top: 2px; }
+#title .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+#title .start { font-family: var(--display); font-size: 22px; padding: 12px 28px; border-radius: 10px; }
+#title .hint { font-size: 13px; color: var(--muted); }
+#loading { font-family: var(--display); color: var(--led); }
+@media (max-width: 560px) {
+  #title ol { grid-template-columns: 1fr; }
+  #title li span { display: none; }
+  #minimap { width: 110px; height: 110px; }
+  #stamps { min-width: 110px; }
+  #stamps .row span.n { display: none; }
+  #led .route { display: none; }
+  #led { max-width: calc(100vw - 24px - 122px); }
+  #led .dest b { font-size: 18px; }
+  #speedo { bottom: auto; top: calc(78px + env(safe-area-inset-top, 0px)); padding: 6px 10px; min-width: 0; }
+  #speedo .v { font-size: 30px; }
+}
+
+/* 터치 조작 */
+#touch { position: fixed; inset: 0; pointer-events: none; z-index: 1; }
+#hud > * { z-index: 2; }
+.overlay, #title { z-index: 10; }
+#touch > * { pointer-events: auto; touch-action: none; }
+#look { position: absolute; right: 0; top: 45%; width: 55%; bottom: 0; }
+#joy { position: absolute; left: 18px; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); width: 130px; height: 130px; border-radius: 50%; background: rgba(13,23,33,.35); border: 2px solid rgba(255,255,255,.25); display: grid; place-items: center; }
+#knob { width: 56px; height: 56px; border-radius: 50%; background: rgba(243,241,234,.8); }
+#tbtns { position: absolute; right: 14px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); display: grid; grid-template-columns: repeat(2, 64px); gap: 10px; }
+#tbtns button { width: 64px; height: 64px; border-radius: 50%; border: 2px solid rgba(255,255,255,.3); background: rgba(13,23,33,.55); font-family: var(--display); font-size: 15px; }
+#tbtns button.on { background: var(--led); color: var(--ink); }
+body.touch #speedo { bottom: auto; top: calc(78px + env(safe-area-inset-top, 0px)); }
+body.touch #prompt { bottom: auto; top: calc(128px + env(safe-area-inset-top, 0px)); }
+body.touch #info { bottom: auto; top: calc(140px + env(safe-area-inset-top, 0px)); max-height: 40vh; }
+body.touch .keyhint { display: none; }
+body.touch #toasts { top: auto; bottom: calc(180px + env(safe-area-inset-bottom, 0px)); }
+@media (max-height: 520px) {
+  #minimap { width: 96px; height: 96px; }
+  #stamps { min-width: 0; padding: 6px 8px; }
+  #stamps .row { display: none; }
+  #tools button { height: 32px; min-width: 32px; padding: 0 6px; font-size: 13px; }
+  body.touch #toasts { bottom: auto; top: calc(12px + env(safe-area-inset-top, 0px)); width: min(46vw, 420px); }
+  body.touch #prompt { top: auto; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+  body.touch #info { top: calc(12px + env(safe-area-inset-top, 0px)); right: auto; left: 50%; transform: translateX(-50%); max-height: calc(100vh - 110px); width: min(420px, 60vw); }
+  #joy { width: 110px; height: 110px; }
+  #tbtns { grid-template-columns: repeat(4, 56px); }
+  #tbtns button { width: 56px; height: 56px; font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) { .toast { animation-duration: 6s; } #arrow { transition: none; } }
+</style>
+</head>
+<body>
+<canvas id="c" tabindex="0" aria-label="동해 버스 투어 3D 화면"></canvas>
+
+<div id="hud" hidden>
+  <div id="led" class="panel" title="클릭하거나 1·2·3 키로 목적지 변경">
+    <div class="route"><span class="r1">시티<br>투어</span><span class="r2">자동<br>운전</span></div>
+    <div class="dest"><small>다음 목적지<span class="keyhint"> · 1 2 3 으로 변경</span></small><b id="destName">추암 촛대바위</b></div>
+    <div class="nav"><svg id="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L20 20 L12 15 L4 20 Z" fill="currentColor"/></svg><span id="destDist">0.0km</span></div>
+  </div>
+
+  <div id="side">
+    <canvas id="minimap" width="300" height="300" aria-label="미니맵 (클릭하면 큰 지도)"></canvas>
+    <div id="stamps" class="panel"></div>
+    <div id="tools">
+      <button id="bMap" title="지도 (M)" aria-label="지도">지도</button>
+      <button id="bAuto" title="자동운전 (P)" aria-pressed="false">자동</button>
+      <button id="bFast" title="배속 (F)" aria-pressed="false" aria-label="배속">1×</button>
+      <button id="bCam" title="시점 전환 (C)" aria-label="시점 전환">시점</button>
+      <button id="bSound" title="소리 켜기/끄기" aria-pressed="false" aria-label="소리 끄기">♪</button>
+      <button id="bHelp" title="조작법" aria-label="조작법">?</button>
+    </div>
+  </div>
+
+  <div id="speedo" class="panel"><div class="v" id="kmh">0</div><div class="u"><span>km/h</span><i id="gear">P</i></div></div>
+  <div id="prompt" class="panel" hidden></div>
+  <div id="toasts" aria-live="polite"></div>
+
+  <aside id="info" class="panel" hidden>
+    <button class="close" id="infoClose" aria-label="닫기">×</button>
+    <div class="eyebrow" id="infoSite"></div>
+    <h2 id="infoTitle"></h2>
+    <div id="infoBody"></div>
+    <div class="actions" id="infoActions"></div>
+  </aside>
+</div>
+
+<div id="touch" hidden>
+  <div id="look"></div>
+  <div id="joy"><div id="knob"></div></div>
+  <div id="tbtns">
+    <button id="tE">E</button>
+    <button id="tSpace">정지</button>
+    <button id="tH">경적</button>
+    <button id="tC">시점</button>
+  </div>
+</div>
+
+<div id="bigmap" class="overlay" hidden>
+  <div class="wrap"><canvas id="bigcanvas" width="750" height="850"></canvas><p>M 또는 화면을 눌러 닫기</p></div>
+</div>
+
+<div id="help" class="overlay" hidden>
+  <div class="sheet panel">
+    <h2>조작법</h2>
+    <h3>버스 운전</h3>
+    <dl class="keys">
+      <dt><kbd>W</kbd> <kbd>S</kbd> / <kbd>↑</kbd> <kbd>↓</kbd></dt><dd>가속 · 브레이크(멈춘 뒤 누르면 후진)</dd>
+      <dt><kbd>A</kbd> <kbd>D</kbd> / <kbd>←</kbd> <kbd>→</kbd></dt><dd>핸들</dd>
+      <dt><kbd>Space</kbd></dt><dd>급정거</dd>
+      <dt><kbd>H</kbd></dt><dd>경적</dd>
+      <dt><kbd>C</kbd></dt><dd>운전석 시점 / 뒤따라가는 시점</dd>
+      <dt><kbd>E</kbd></dt><dd>빛기둥 정류장에 멈추면 내리기</dd>
+      <dt><kbd>P</kbd></dt><dd>자동운전 켜기/끄기 (목적지 정류장까지 도로를 따라 운전, 방향키를 누르면 해제)</dd>
+    </dl>
+    <h3>걸어서 구경</h3>
+    <dl class="keys">
+      <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>걷기 (<kbd>Shift</kbd> 누르면 달리기)</dd>
+      <dt><kbd>Space</kbd></dt><dd>점프</dd>
+      <dt>마우스 드래그 · 휠</dt><dd>시점 돌리기 · 확대/축소</dd>
+      <dt><kbd>E</kbd></dt><dd>안내판 읽기 · 버스 타기</dd>
+    </dl>
+    <h3>기타</h3>
+    <dl class="keys">
+      <dt><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></dt><dd>목적지 선택 (묵호 · 추암 · 무릉계곡)</dd>
+      <dt><kbd>M</kbd></dt><dd>큰 지도</dd>
+      <dt><kbd>F</kbd></dt><dd>배속 1× → 2× → 4×</dd>
+    </dl>
+    <button class="btn primary" id="helpClose">닫기</button>
+  </div>
+</div>
+
+<div id="finish" class="overlay" hidden>
+  <div class="sheet panel">
+    <h2>동해 스탬프 투어 완주!</h2>
+    <p style="line-height:1.7;margin:0 0 16px">묵호의 벽화 골목과 바다 위 산책로, 추암의 촛대바위, 무릉계곡의 너럭바위와 쌍폭포까지 모두 둘러봤어요. 버스는 계속 운행하니 좋아하는 곳을 다시 찾아가 보세요.</p>
+    <button class="btn primary" id="finishClose">계속 둘러보기</button>
+  </div>
+</div>
+
+<div id="title">
+  <div class="card">
+    <span class="ledsign">동해 시티투어 · 순환 노선</span>
+    <h1>동해 버스 투어</h1>
+    <p class="lede">시티투어 버스를 직접 몰고 동해안을 달려요. 빛기둥이 서 있는 정류장에 버스를 세우고 내리면, 걸어 다니며 관광지를 구경하고 안내판 스탬프를 모을 수 있어요.</p>
+    <ol>
+      <li class="panel" style="--c:#ff8a3d"><b>묵호 도째비골·논골담길</b><span>벽화 골목, 묵호등대, 유리 바닥 스카이워크, 바다 위 해랑전망대</span></li>
+      <li class="panel" style="--c:#ffc23d"><b>추암 촛대바위</b><span>애국가 일출 명소, 출렁다리, 고려 때 정자 해암정</span></li>
+      <li class="panel" style="--c:#6fd6a0"><b>무릉계곡</b><span>삼화사, 너럭바위 무릉반석, 두 줄기 쌍폭포</span></li>
+    </ol>
+    <div class="row">
+      <button class="btn primary start" id="startBtn" disabled><span id="loading">불러오는 중…</span></button>
+      <button class="btn" id="titleHelp">조작법 보기</button>
+      <span class="hint">W A S D 또는 방향키로 운전 · 휴대폰은 화면 조이스틱</span>
+    </div>
+  </div>
+</div>
+
+<script type="importmap">{ "imports": { "three": "./lib/three.module.min.js" } }</script>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
