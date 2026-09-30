@@ -11,6 +11,7 @@ import { Walker } from './player.js';
 import { Input } from './input.js';
 import { Sound } from './audio.js';
 import { Hud } from './hud.js';
+import { Autopilot } from './autopilot.js';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('c');
@@ -45,6 +46,7 @@ const walker = new Walker(scene);
 const input = new Input(canvas);
 const sound = new Sound();
 const hud = new Hud();
+const pilot = new Autopilot();
 
 // ---------- 상태 ----------
 const SAVE_KEY = 'donghae-bus-tour-v1';
@@ -63,6 +65,7 @@ let timeAnim = null;          // 해돋이 연출
 let finishedShown = got.size >= POIS.length;
 let paused = false;
 let snapCam = false;
+let timeScale = 1;            // 배속 (1×, 2×, 4×)
 const clock = new THREE.Clock();
 let elapsed = 0;
 
@@ -101,6 +104,8 @@ $('bMap').onclick = () => toggleMap();
 $('minimap').onclick = () => toggleMap();
 $('bigmap').onclick = () => toggleMap();
 $('bCam').onclick = () => toggleCam();
+$('bAuto').onclick = () => togglePilot();
+$('bFast').onclick = () => cycleSpeed();
 $('bSound').onclick = () => {
   sound.setMuted(!sound.muted);
   $('bSound').setAttribute('aria-pressed', String(sound.muted));
@@ -129,6 +134,25 @@ function toggleCam() {
 function setDest(i) {
   destIdx = i;
   hud.toast(`목적지를 <b>${SITES[i].name}</b>(으)로 바꿨어요`, 'announce');
+  if (pilot.active) pilot.start(bus, SITES[i].stop);
+}
+function setPilot(on, msg) {
+  if (on) pilot.start(bus, SITES[destIdx].stop); else pilot.cancel();
+  $('bAuto').setAttribute('aria-pressed', String(on));
+  $('led').classList.toggle('auto', on);
+  if (msg) hud.toast(msg, 'announce');
+}
+function togglePilot() {
+  if (mode !== 'drive') { hud.toast('버스에 타야 자동운전을 쓸 수 있어요'); return; }
+  if (pilot.active) setPilot(false, '자동운전을 껐어요');
+  else setPilot(true, `<b>자동운전</b>으로 ${SITES[destIdx].name}까지 갑니다. 방향키를 누르면 직접 운전으로 바뀌어요.`);
+}
+const SPEEDS = [1, 2, 4];
+function cycleSpeed() {
+  timeScale = SPEEDS[(SPEEDS.indexOf(timeScale) + 1) % SPEEDS.length];
+  $('bFast').textContent = `${timeScale}×`;
+  $('bFast').setAttribute('aria-pressed', String(timeScale > 1));
+  hud.toast(timeScale === 1 ? '보통 속도로 돌아왔어요' : `<b>${timeScale}배속</b>으로 진행해요`);
 }
 
 const playerPos = () => (mode === 'walk' ? { x: walker.x, z: walker.z } : { x: bus.x, z: bus.z });
@@ -136,6 +160,7 @@ const heading = () => (mode === 'walk' ? (camYaw + Math.PI) : bus.yaw);
 
 // ---------- 모드 전환 ----------
 function getOff() {
+  setPilot(false);
   const door = bus.local(-2.6, 3.8);
   walker.place(door.x, door.z, bus.yaw - Math.PI / 2);
   walker.mesh.visible = true;
@@ -252,9 +277,12 @@ function frame() {
   requestAnimationFrame(frame);
   let dt = Math.min(clock.getDelta(), 0.05);
   if (document.hidden) dt = 0;
-  step(dt);
+  // 배속: 같은 프레임 안에서 시뮬레이션을 여러 번 돌린다 (한 번 누른 키는 첫 번에만 적용)
+  for (let k = 0; k < timeScale; k++) {
+    step(dt);
+    input.endFrame();
+  }
   renderer.render(scene, camera);
-  input.endFrame();
 }
 
 function step(dt) {
@@ -276,6 +304,8 @@ function step(dt) {
     if (input.pressed('Digit2')) setDest(1);
     if (input.pressed('Digit3')) setDest(2);
     if (input.pressed('KeyC')) toggleCam();
+    if (input.pressed('KeyP')) togglePilot();
+    if (input.pressed('KeyF')) cycleSpeed();
     if (input.pressed('Escape')) hud.closeInfo();
   }
   paused = modalOpen || !$('bigmap').hidden;
@@ -284,10 +314,19 @@ function step(dt) {
   let hint = null;
 
   if (mode === 'drive') {
-    const hit = bus.update(paused ? 0 : dt, {
+    let control = {
       throttle: Math.max(0, ax.y), brake: Math.max(0, -ax.y), steer: -ax.x,
       handbrake: !paused && input.held('Space'),
-    });
+    };
+    if (pilot.active) {
+      const manual = input.pressed('KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space') || input.joy.active;
+      if (manual) setPilot(false, '직접 운전으로 바꿨어요');
+      else if (!paused) {
+        control = pilot.drive(bus, dt);
+        if (control.arrived) setPilot(false, `자동운전으로 <b>${SITES[destIdx].name}</b>에 도착했어요`);
+      }
+    }
+    const hit = bus.update(paused ? 0 : dt, control);
     if (hit) sound.thud();
     if (!paused && input.pressed('KeyH')) sound.horn();
     const ns = nearestSite(bus.x, bus.z);
@@ -298,7 +337,9 @@ function step(dt) {
       hud.toast(`이번 정류장은 <b>${atStop.name}</b>입니다.`, 'announce');
     }
     if (!atStop && ns.dist > 40) lastAnnounced = null;
-    if (atStop) {
+    if (pilot.active) {
+      hint = '자동운전 중 · <kbd>P</kbd> 또는 방향키로 해제';
+    } else if (atStop) {
       if (Math.abs(bus.speed) < 1.5) {
         hint = `<kbd>E</kbd> 내려서 ${atStop.name} 구경하기`;
         if (input.pressed('KeyE')) getOff();
@@ -346,7 +387,7 @@ function step(dt) {
     const dx = dest.stop.x - pp.x, dz = dest.stop.z - pp.z;
     let rel = Math.atan2(dx, dz) - heading();
     hud.setDest(dest, Math.hypot(dx, dz), rel);
-    if ((Math.floor(elapsed * 10) & 1) === 0) hud.drawMinimap(pp, heading(), dest);
+    if ((Math.floor(elapsed * 10) & 1) === 0) hud.drawMinimap(pp, heading(), dest, pilot.active ? pilot.path : null);
   }
 
   // 정류장 빛기둥

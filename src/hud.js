@@ -143,7 +143,7 @@ export class Hud {
     g.closePath(); g.fill(); g.stroke();
   }
 
-  drawMinimap(player, heading, dest) {
+  drawMinimap(player, heading, dest, route) {
     const g = this.mg, W = this.mini.width;
     const span = 700; // 보이는 범위(m)
     const k = W / span, S = this.map.S;
@@ -154,10 +154,18 @@ export class Hud {
     const [ox, oy] = tp(WORLD.x0, WORLD.z0);
     g.imageSmoothingEnabled = true;
     g.drawImage(this.map.canvas, ox, oy, this.map.canvas.width * S * k, this.map.canvas.height * S * k);
-    // 목적지 방향 선
-    const [dx, dy] = tp(dest.stop.x, dest.stop.z);
-    g.strokeStyle = dest.color; g.setLineDash([6, 6]); g.lineWidth = 2;
-    g.beginPath(); g.moveTo(W / 2, W / 2); g.lineTo(dx, dy); g.stroke(); g.setLineDash([]);
+    if (route) {
+      // 자동운전 경로
+      g.strokeStyle = dest.color; g.lineWidth = 5; g.globalAlpha = 0.85;
+      g.beginPath();
+      route.forEach((p, i) => { const [x, y] = tp(p.x, p.z); i ? g.lineTo(x, y) : g.moveTo(x, y); });
+      g.stroke(); g.globalAlpha = 1;
+    } else {
+      // 목적지 방향 선
+      const [dx, dy] = tp(dest.stop.x, dest.stop.z);
+      g.strokeStyle = dest.color; g.setLineDash([6, 6]); g.lineWidth = 2;
+      g.beginPath(); g.moveTo(W / 2, W / 2); g.lineTo(dx, dy); g.stroke(); g.setLineDash([]);
+    }
     this.drawMarkers(g, tp, 1.4, player, heading, dest, false);
     g.restore();
     g.fillStyle = '#f3f1ea'; g.font = '22px "Do Hyeon", sans-serif'; g.textAlign = 'center';

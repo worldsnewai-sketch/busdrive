@@ -33,6 +33,10 @@ button:focus-visible { outline: 2px solid var(--led); outline-offset: 2px; }
 /* LED 행선판 */
 #led { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); left: 12px; display: flex; align-items: stretch; gap: 0; padding: 0; overflow: hidden; max-width: calc(100vw - 24px - 150px); }
 #led .route { background: var(--led); color: var(--ink); font-family: var(--display); font-size: 15px; padding: 8px 10px; display: grid; place-items: center; line-height: 1.05; text-align: center; }
+#led .route .r2 { display: none; }
+#led.auto .route { background: var(--pine); display: grid; }
+#led.auto .route .r1 { display: none; }
+#led.auto .route .r2 { display: inline; }
 #led .dest { padding: 7px 12px; display: grid; gap: 2px; min-width: 0; cursor: pointer; }
 #led .dest small { color: var(--muted); font-size: 11px; letter-spacing: .06em; }
 #led .dest b { font-family: var(--display); font-weight: 400; font-size: 22px; color: var(--led); text-shadow: 0 0 8px color-mix(in srgb, var(--led) 60%, transparent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -157,7 +161,7 @@ body.touch #toasts { top: auto; bottom: calc(180px + env(safe-area-inset-bottom,
 
 <div id="hud" hidden>
   <div id="led" class="panel" title="클릭하거나 1·2·3 키로 목적지 변경">
-    <div class="route">시티<br>투어</div>
+    <div class="route"><span class="r1">시티<br>투어</span><span class="r2">자동<br>운전</span></div>
     <div class="dest"><small>다음 목적지<span class="keyhint"> · 1 2 3 으로 변경</span></small><b id="destName">추암 촛대바위</b></div>
     <div class="nav"><svg id="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L20 20 L12 15 L4 20 Z" fill="currentColor"/></svg><span id="destDist">0.0km</span></div>
   </div>
@@ -167,6 +171,8 @@ body.touch #toasts { top: auto; bottom: calc(180px + env(safe-area-inset-bottom,
     <div id="stamps" class="panel"></div>
     <div id="tools">
       <button id="bMap" title="지도 (M)" aria-label="지도">지도</button>
+      <button id="bAuto" title="자동운전 (P)" aria-pressed="false">자동</button>
+      <button id="bFast" title="배속 (F)" aria-pressed="false" aria-label="배속">1×</button>
       <button id="bCam" title="시점 전환 (C)" aria-label="시점 전환">시점</button>
       <button id="bSound" title="소리 켜기/끄기" aria-pressed="false" aria-label="소리 끄기">♪</button>
       <button id="bHelp" title="조작법" aria-label="조작법">?</button>
@@ -212,6 +218,7 @@ body.touch #toasts { top: auto; bottom: calc(180px + env(safe-area-inset-bottom,
       <dt><kbd>H</kbd></dt><dd>경적</dd>
       <dt><kbd>C</kbd></dt><dd>운전석 시점 / 뒤따라가는 시점</dd>
       <dt><kbd>E</kbd></dt><dd>빛기둥 정류장에 멈추면 내리기</dd>
+      <dt><kbd>P</kbd></dt><dd>자동운전 켜기/끄기 (목적지 정류장까지 도로를 따라 운전, 방향키를 누르면 해제)</dd>
     </dl>
     <h3>걸어서 구경</h3>
     <dl class="keys">
@@ -224,6 +231,7 @@ body.touch #toasts { top: auto; bottom: calc(180px + env(safe-area-inset-bottom,
     <dl class="keys">
       <dt><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></dt><dd>목적지 선택 (묵호 · 추암 · 무릉계곡)</dd>
       <dt><kbd>M</kbd></dt><dd>큰 지도</dd>
+      <dt><kbd>F</kbd></dt><dd>배속 1× → 2× → 4×</dd>
     </dl>
     <button class="btn primary" id="helpClose">닫기</button>
   </div>
