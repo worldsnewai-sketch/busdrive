@@ -88,3 +88,26 @@ export const SITES = [
   { id: 'chuam', name: '추암 촛대바위', short: '추암', stop: CHUAM.stop, color: '#ffc23d' },
   { id: 'mureung', name: '무릉계곡', short: '무릉계곡', stop: MUREUNG.stop, color: '#6fd6a0' },
 ];
+
+// ---------- 동해페이 경제: 터미널·주유소·가게 ----------
+export const TERMINAL_STOP = { x: 30, z: -27, yaw: Math.PI / 2 };
+export const GAS = { x: 101, z: -121, yaw: -0.49 }; // 해안도로 서쪽 주유소
+
+// 목적지 목록 (1~5번 키): 관광지 3곳 + 터미널 + 주유소
+export const DESTS = [
+  ...SITES,
+  { id: 'terminal', name: '시티투어 터미널', short: '터미널', stop: TERMINAL_STOP, color: '#dfe8ee' },
+  { id: 'gas', name: '시티투어 주유소', short: '주유소', stop: GAS, color: '#4aa3ff' },
+];
+
+// 가게 위치 (yaw: 가게 정면이 바라보는 방향)
+export const SHOP_SPOTS = {
+  'mukho-cafe': { x: 156, z: -430, yaw: Math.PI },
+  'chuam-store': { x: 182, z: 436, yaw: 0 },
+  'mureung-food': { x: -322, z: valleyZ(-322) + 24, yaw: Math.PI },
+};
+for (const s of Object.values(SHOP_SPOTS)) PADS.push({ x: s.x, z: s.z, r: 8, fall: 7 });
+PADS.push({ x: GAS.x, z: GAS.z, r: 14, fall: 10 });
+
+// 시내 건물이 들어서면 안 되는 곳
+export const KEEP_CLEAR = [{ x: GAS.x, z: GAS.z, r: 24 }];

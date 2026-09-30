@@ -3,19 +3,21 @@ import * as THREE from 'three';
 import { lerp } from './geo.js';
 import { terrainHeight, platformHeight, resolveCircle, isInWorld } from './terrain.js';
 
-function buildPerson() {
+export function buildPerson(pal = {}) {
   const g = new THREE.Group();
-  const skin = new THREE.MeshLambertMaterial({ color: '#f1c7a5' });
-  const shirt = new THREE.MeshLambertMaterial({ color: '#ff6b4a' });
-  const pants = new THREE.MeshLambertMaterial({ color: '#2d3e5c' });
-  const hatM = new THREE.MeshLambertMaterial({ color: '#f4e3b5' });
-  const bagM = new THREE.MeshLambertMaterial({ color: '#2f8f6f' });
+  const skin = new THREE.MeshLambertMaterial({ color: pal.skin || '#f1c7a5' });
+  const shirt = new THREE.MeshLambertMaterial({ color: pal.shirt || '#ff6b4a' });
+  const pants = new THREE.MeshLambertMaterial({ color: pal.pants || '#2d3e5c' });
+  const hatM = new THREE.MeshLambertMaterial({ color: pal.hat || '#f4e3b5' });
+  const bagM = new THREE.MeshLambertMaterial({ color: pal.bag || '#2f8f6f' });
   const part = (geo, mat, x, y, z, parent = g) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m; };
 
   part(new THREE.CapsuleGeometry(0.28, 0.5, 4, 10), shirt, 0, 1.2, 0);
   part(new THREE.SphereGeometry(0.2, 14, 10), skin, 0, 1.72, 0);
-  part(new THREE.CylinderGeometry(0.3, 0.32, 0.06, 16), hatM, 0, 1.86, 0);
-  part(new THREE.CylinderGeometry(0.19, 0.21, 0.14, 14), hatM, 0, 1.93, 0);
+  if (pal.hat !== null) {
+    part(new THREE.CylinderGeometry(0.3, 0.32, 0.06, 16), hatM, 0, 1.86, 0);
+    part(new THREE.CylinderGeometry(0.19, 0.21, 0.14, 14), hatM, 0, 1.93, 0);
+  } else part(new THREE.SphereGeometry(0.21, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshLambertMaterial({ color: pal.hair || '#2b2420' }), 0, 1.76, 0);
   part(new THREE.BoxGeometry(0.34, 0.4, 0.16), bagM, 0, 1.25, -0.3);
   const legs = [], arms = [];
   for (const s of [-1, 1]) {
@@ -64,9 +66,10 @@ export class Walker {
     let mx = fx * inp.y + rx * inp.x, mz = fz * inp.y + rz * inp.x;
     const ml = Math.hypot(mx, mz);
     const moving = ml > 0.1;
-    const speed = (inp.run ? 8.5 : 4.2) * Math.min(1, ml);
+    const speed = (inp.run ? 8.5 : 4.2) * (inp.mult || 1) * Math.min(1, ml);
     if (ml > 0) { mx /= ml; mz /= ml; }
     this.speedNow = moving ? speed : 0;
+    this.running = moving && !!inp.run;
 
     if (moving) {
       const target = Math.atan2(mx, mz);

@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { WORLD, clamp, lerp, smoothstep, fbm, rng, coastX, valleyZ } from './geo.js';
 import { NX, NZ, heights, terrainHeight, roadPaths, roadQuery, addCollider, addBoxCollider } from './terrain.js';
-import { PADS, WALKWAYS, TOWN, TERMINAL, SITES } from './layout.js';
+import { PADS, WALKWAYS, TOWN, TERMINAL, DESTS, KEEP_CLEAR } from './layout.js';
 import { groundDetailTexture, roadTexture, pathTexture, windowTexture, textTexture, cloudTexture, signTexture } from './textures.js';
 
 // ---------------- 하늘과 시간 ----------------
@@ -384,6 +384,7 @@ export function createTown(scene) {
   const tryPlace = (x, z, w, d) => {
     if (roadQuery(x, z).dist < Math.max(w, d) / 2 + 7) return false;
     if (Math.hypot(x - TERMINAL.x, z - TERMINAL.z) < 30) return false;
+    if (KEEP_CLEAR.some((k) => Math.hypot(x - k.x, z - k.z) < k.r + Math.max(w, d) / 2)) return false;
     for (const p of placed) if (Math.abs(p.x - x) < (p.w + w) / 2 + 4 && Math.abs(p.z - z) < (p.d + d) / 2 + 4) return false;
     placed.push({ x, z, w, d });
     return true;
@@ -492,7 +493,7 @@ export function createAmbient(scene) {
 // 정류장 빛기둥 + 떠 있는 이름표
 export function createStopMarkers(scene, labelTex) {
   const markers = [];
-  for (const s of SITES) {
+  for (const s of DESTS) {
     const y = terrainHeight(s.stop.x, s.stop.z);
     const beam = new THREE.Mesh(
       new THREE.CylinderGeometry(3, 3, 90, 20, 1, true),

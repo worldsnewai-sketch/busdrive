@@ -149,7 +149,7 @@ export class Bus {
   update(dt, inp) {
     const r = roadQuery(this.x, this.z);
     this.onRoad = r.dist < 6.5;
-    const maxF = this.onRoad ? 25 : 11;
+    const maxF = inp.limp ? 3 : this.onRoad ? 25 : 11; // 연료가 없으면 시속 11km
     const up = inp.throttle, down = inp.brake;
     this.throttle = up;
     if (up > 0) {
