@@ -5,6 +5,9 @@
   const RANK_LIMIT = 200; // 저장해 둘 최대 기록 수
   // 학년별 목표 점수(별 3개 기준). 점수 = 평균 타수 × 정확도
   const GRADE_GOAL = { 1: 40, 2: 60, 3: 90, 4: 120, 5: 150, 6: 180 };
+  // 자소 단위 타수에 곱하는 보정값. 짧고 쉬운 문장이라 한컴타자연습보다 높게 나오는 것을 맞춤
+  const SPEED_SCALE = 0.6;
+  const perMinute = (strokes, secs) => Math.round((strokes / secs) * 60 * SPEED_SCALE);
 
   const $ = (id) => document.getElementById(id);
   const topics = window.TOPICS;
@@ -185,7 +188,7 @@
     const secs = state.startedAt ? (performance.now() - state.startedAt) / 1000 : 0;
     const target = state.sentences[state.index];
     const head = [...target].slice(0, [...typed].length).join('');
-    const speed = secs > 1 && typed ? Math.round((correctStrokes(head, typed) / secs) * 60) : 0;
+    const speed = secs > 1 && typed ? perMinute(correctStrokes(head, typed), secs) : 0;
     const acc = typed ? Math.round((correctChars(head, typed) / Math.max(1, [...head].length)) * 100) : 100;
     $('live-speed').textContent = speed;
     $('live-acc').textContent = `${acc}%`;
@@ -223,7 +226,7 @@
       strokes,
       correct: correctChars(target, typed),
       length: [...target].length,
-      speed: Math.round((strokes / secs) * 60),
+      speed: perMinute(strokes, secs),
     });
     state.index++;
     if (state.index >= state.sentences.length) finishRound();
@@ -241,7 +244,7 @@
     const totalSecs = r.reduce((s, x) => s + x.secs, 0);
     const totalStrokes = r.reduce((s, x) => s + x.strokes, 0);
     const accuracy = r.reduce((s, x) => s + x.correct, 0) / r.reduce((s, x) => s + x.length, 0);
-    const speed = Math.round((totalStrokes / totalSecs) * 60);
+    const speed = perMinute(totalStrokes, totalSecs);
     const best = Math.max(...r.map((x) => x.speed));
     const score = Math.round(speed * accuracy);
     const accPct = Math.round(accuracy * 100);
@@ -287,7 +290,7 @@
       y.textContent = x.typed;
       const m = document.createElement('div');
       m.className = 'r-meta';
-      m.textContent = `${Math.round(x.strokes)}타를 ${x.secs.toFixed(1)}초에 → 1분에 ${x.speed}타 · 정확도 ${pct}%`;
+      m.textContent = `${x.secs.toFixed(1)}초 · ${x.speed}타 · 정확도 ${pct}%`;
       li.append(t, y, m);
       list.appendChild(li);
     });
