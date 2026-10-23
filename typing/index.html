@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>쑥쑥 타자연습</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Gothic:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="logo" id="go-home" type="button">⌨️ 쑥쑥 타자연습</button>
+    <button class="pill" id="go-ranking" type="button">🏆 랭킹</button>
+  </header>
+
+  <main>
+    <!-- 1. 이름과 학년 -->
+    <section class="screen" id="screen-grade">
+      <h1>몇 학년이에요?</h1>
+      <label class="name-field">
+        <span>내 이름 (랭킹에 나와요)</span>
+        <input id="player-name" type="text" maxlength="10" placeholder="이름을 입력하세요" autocomplete="off">
+      </label>
+      <div class="grid grade-grid" id="grade-list"></div>
+      <p class="hint" id="grade-hint"></p>
+    </section>
+
+    <!-- 2. 주제 -->
+    <section class="screen" id="screen-topic" hidden>
+      <button class="back" type="button" data-back="grade">← 학년 다시 고르기</button>
+      <h1>어떤 주제로 연습할까요?</h1>
+      <p class="sub" id="topic-sub"></p>
+      <div class="grid topic-grid" id="topic-list"></div>
+    </section>
+
+    <!-- 3. 타자 -->
+    <section class="screen" id="screen-play" hidden>
+      <div class="play-head">
+        <span class="tag" id="play-topic"></span>
+        <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
+        <span class="count" id="play-count"></span>
+      </div>
+
+      <div class="card target-card">
+        <p class="target" id="target"></p>
+        <input id="typing-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="여기에 따라 써 보세요">
+        <p class="next" id="next-sentence"></p>
+      </div>
+
+      <div class="live">
+        <div><span class="live-label">지금 타수</span><b id="live-speed">0</b></div>
+        <div><span class="live-label">정확도</span><b id="live-acc">100%</b></div>
+      </div>
+      <p class="hint">다 쓰면 <kbd>Enter</kbd> 키를 눌러요.</p>
+      <button class="back quit" type="button" id="quit">그만하기</button>
+    </section>
+
+    <!-- 4. 결과 -->
+    <section class="screen" id="screen-result" hidden>
+      <h1 id="result-title">다 했어요!</h1>
+      <div class="stars" id="result-stars"></div>
+      <div class="stat-row">
+        <div class="stat big"><span>점수</span><b id="res-score"></b></div>
+        <div class="stat"><span>평균 타수</span><b id="res-speed"></b></div>
+        <div class="stat"><span>정확도</span><b id="res-acc"></b></div>
+        <div class="stat"><span>최고 타수</span><b id="res-best"></b></div>
+        <div class="stat"><span>걸린 시간</span><b id="res-time"></b></div>
+      </div>
+      <p class="rank-msg" id="res-rank"></p>
+      <p class="sub" id="res-tip"></p>
+
+      <details class="card review">
+        <summary>문장별 결과 보기</summary>
+        <ol id="res-list"></ol>
+      </details>
+
+      <div class="actions">
+        <button class="btn" type="button" id="again">같은 주제 다시 하기</button>
+        <button class="btn ghost" type="button" data-back="topic">다른 주제 고르기</button>
+        <button class="btn ghost" type="button" id="see-ranking">🏆 랭킹 보기</button>
+      </div>
+    </section>
+
+    <!-- 5. 랭킹 -->
+    <section class="screen" id="screen-ranking" hidden>
+      <button class="back" type="button" id="ranking-back">← 돌아가기</button>
+      <h1>🏆 랭킹</h1>
+      <div class="filters">
+        <select id="rank-grade" aria-label="학년"></select>
+        <select id="rank-topic" aria-label="주제"></select>
+      </div>
+      <table class="rank-table">
+        <thead><tr><th>순위</th><th>이름</th><th>학년</th><th>주제</th><th>점수</th><th>타수</th><th>정확도</th></tr></thead>
+        <tbody id="rank-body"></tbody>
+      </table>
+      <p class="sub" id="rank-empty" hidden>아직 기록이 없어요. 첫 번째 주인공이 되어 보세요!</p>
+      <p class="hint">랭킹은 이 컴퓨터(브라우저)에 저장돼요. <button class="link" type="button" id="rank-clear">랭킹 지우기</button></p>
+    </section>
+  </main>
+
+  <script src="sentences.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
