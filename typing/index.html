@@ -3,34 +3,124 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>쑥쑥 타자연습</title>
+  <title>모산 타자왕</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Gothic:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="topbar">
-    <button class="logo" id="go-home" type="button">⌨️ 쑥쑥 타자연습</button>
+    <button class="logo" id="go-home" type="button"><span class="crown">👑</span> 모산 타자왕</button>
     <button class="pill" id="go-ranking" type="button">🏆 랭킹</button>
   </header>
 
   <main>
-    <!-- 1. 이름과 학년 -->
+    <!-- 1. 학년과 이름 -->
     <section class="screen" id="screen-grade">
-      <h1>몇 학년이에요?</h1>
-      <label class="name-field">
-        <span>내 이름 (랭킹에 나와요)</span>
-        <input id="player-name" type="text" maxlength="10" placeholder="이름을 입력하세요" autocomplete="off">
-      </label>
+      <div class="hero">
+        <svg class="school" viewBox="0 0 800 300" preserveAspectRatio="xMidYMax slice" role="img" aria-label="모산초등학교 그림">
+          <defs>
+            <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#5aa6e6"/>
+              <stop offset="1" stop-color="#bfe0f7"/>
+            </linearGradient>
+            <pattern id="solar" width="14" height="9" patternUnits="userSpaceOnUse">
+              <rect width="14" height="9" fill="#2b3f72"/>
+              <path d="M14 0V9M0 9H14" stroke="#7d95c9" stroke-width="1"/>
+            </pattern>
+          </defs>
+          <rect width="800" height="300" fill="url(#sky)"/>
+          <!-- 소나무 언덕 -->
+          <path d="M430 175 C470 120 520 95 560 92 C600 70 640 74 680 70 C720 60 760 66 800 72 V200 H430Z" fill="#2f5b3a"/>
+          <path d="M0 150 C40 132 80 136 120 130 C170 124 230 128 280 132 C330 128 380 134 430 140 V200 H0Z" fill="#3a6a44"/>
+          <g fill="#27503a">
+            <circle cx="520" cy="104" r="16"/><circle cx="560" cy="92" r="18"/><circle cx="600" cy="84" r="17"/>
+            <circle cx="640" cy="80" r="18"/><circle cx="680" cy="74" r="17"/><circle cx="720" cy="70" r="18"/>
+            <circle cx="760" cy="72" r="17"/><circle cx="795" cy="76" r="16"/>
+            <circle cx="30" cy="142" r="12"/><circle cx="80" cy="136" r="13"/><circle cx="140" cy="132" r="12"/>
+            <circle cx="200" cy="132" r="13"/><circle cx="260" cy="134" r="12"/><circle cx="320" cy="134" r="12"/>
+          </g>
+          <!-- 태양광 지붕 -->
+          <path d="M80 182 L100 150 H370 L375 182Z" fill="url(#solar)"/>
+          <path d="M425 182 L430 150 H700 L728 182Z" fill="url(#solar)"/>
+          <path d="M60 196 L72 180 H740 L752 196Z" fill="url(#solar)"/>
+          <!-- 건물 -->
+          <rect x="40" y="196" width="720" height="22" fill="#f4c99a"/>
+          <rect x="44" y="218" width="712" height="54" fill="#f6dcbc"/>
+          <g fill="#8fa9b8">
+            <rect x="60" y="224" width="40" height="16"/><rect x="112" y="224" width="40" height="16"/>
+            <rect x="164" y="224" width="40" height="16"/><rect x="216" y="224" width="40" height="16"/>
+            <rect x="268" y="224" width="40" height="16"/><rect x="320" y="224" width="30" height="16"/>
+            <rect x="450" y="224" width="30" height="16"/><rect x="492" y="224" width="40" height="16"/>
+            <rect x="544" y="224" width="40" height="16"/><rect x="596" y="224" width="40" height="16"/>
+            <rect x="648" y="224" width="40" height="16"/><rect x="700" y="224" width="40" height="16"/>
+            <rect x="60" y="248" width="40" height="16"/><rect x="112" y="248" width="40" height="16"/>
+            <rect x="164" y="248" width="40" height="16"/><rect x="216" y="248" width="40" height="16"/>
+            <rect x="268" y="248" width="40" height="16"/><rect x="320" y="248" width="30" height="16"/>
+            <rect x="450" y="248" width="30" height="16"/><rect x="492" y="248" width="40" height="16"/>
+            <rect x="544" y="248" width="40" height="16"/><rect x="596" y="248" width="40" height="16"/>
+            <rect x="648" y="248" width="40" height="16"/><rect x="700" y="248" width="40" height="16"/>
+          </g>
+          <g fill="#c4553a">
+            <rect x="104" y="244" width="6" height="28"/><rect x="260" y="244" width="6" height="28"/>
+            <rect x="536" y="244" width="6" height="28"/><rect x="690" y="244" width="6" height="28"/>
+          </g>
+          <!-- 가운데 주황 탑과 교표 -->
+          <path d="M362 272 V190 L400 170 L438 190 V272Z" fill="#e8532f"/>
+          <circle cx="400" cy="196" r="11" fill="#f3f0dc"/>
+          <circle cx="400" cy="196" r="7" fill="#3f8f4a"/>
+          <rect x="376" y="214" width="48" height="14" fill="#8fa9b8"/>
+          <path d="M350 238 H450 V246 H350Z" fill="#f2b94b"/>
+          <path d="M350 238 H375 V246 H350Z M400 238 H425 V246 H400Z" fill="#e86b5a"/>
+          <rect x="385" y="246" width="30" height="26" fill="#d9e8ef"/>
+          <!-- 학교 이름 -->
+          <g font-family="Jua, sans-serif" font-size="15" text-anchor="middle">
+            <text x="80" y="212" fill="#e04b3a">모</text>
+            <text x="108" y="212" fill="#f08a24">산</text>
+            <text x="136" y="212" fill="#3e9b4f">초</text>
+            <text x="164" y="212" fill="#2f7fd1">등</text>
+            <text x="192" y="212" fill="#3e9b4f">학</text>
+            <text x="220" y="212" fill="#2f7fd1">교</text>
+          </g>
+          <!-- 운동장과 앞뜰 나무 -->
+          <rect y="272" width="800" height="28" fill="#e6d6b8"/>
+          <g fill="#2f5b3a">
+            <ellipse cx="150" cy="272" rx="18" ry="9"/><ellipse cx="300" cy="270" rx="16" ry="10"/>
+            <ellipse cx="500" cy="270" rx="17" ry="10"/><ellipse cx="640" cy="272" rx="18" ry="9"/>
+          </g>
+        </svg>
+        <img class="school-photo" src="school.jpg" alt="모산초등학교" onerror="this.remove()">
+        <div class="hero-title">
+          <span>모산초등학교</span>
+          <b>👑 모산 타자왕</b>
+        </div>
+      </div>
+
+      <div class="notice">
+        <b>📢 이렇게 해요</b>
+        학년과 이름을 고르고, 안전 주제를 골라 문장 5개를 따라 써요.<br>
+        <strong>5문장을 모두 입력해야 랭킹에 등록돼요!</strong>
+      </div>
+
+      <h2 class="step"><i>1</i> 몇 학년이에요?</h2>
       <div class="grid grade-grid" id="grade-list"></div>
+
+      <h2 class="step"><i>2</i> 이름을 골라요</h2>
+      <div class="name-chips" id="name-chips"></div>
+      <label class="name-field">
+        <input id="player-name" type="text" maxlength="10" placeholder="처음이면 이름을 써요" autocomplete="off">
+      </label>
+
+      <button class="btn start" type="button" id="to-topic">안전 주제 고르기 →</button>
       <p class="hint" id="grade-hint"></p>
     </section>
 
     <!-- 2. 주제 -->
     <section class="screen" id="screen-topic" hidden>
-      <button class="back" type="button" data-back="grade">← 학년 다시 고르기</button>
-      <h1>어떤 주제로 연습할까요?</h1>
+      <button class="back" type="button" data-back="grade">← 학년·이름 다시 고르기</button>
+      <h1>어떤 안전 주제로 연습할까요?</h1>
       <p class="sub" id="topic-sub"></p>
+      <p class="notice small">📢 5문장을 모두 입력해야 랭킹에 등록돼요. 끝까지 힘내요!</p>
       <div class="grid topic-grid" id="topic-list"></div>
     </section>
 
@@ -52,50 +142,46 @@
         <div><span class="live-label">1분에 몇 글자</span><b id="live-speed">0</b></div>
         <div><span class="live-label">정확도</span><b id="live-acc">100%</b></div>
       </div>
-      <p class="hint">다 쓰면 <kbd>Enter</kbd> 키를 눌러요.</p>
+      <p class="hint">한 문장을 다 쓰면 <kbd>Enter</kbd> 키를 눌러요. <b>5문장을 모두 입력해야 랭킹에 등록돼요!</b></p>
       <button class="back quit" type="button" id="quit">그만하기</button>
     </section>
 
-    <!-- 4. 결과 -->
-    <section class="screen" id="screen-result" hidden>
-      <h1 id="result-title">다 했어요!</h1>
-      <div class="stars" id="result-stars"></div>
-      <div class="stat-row">
-        <div class="stat big"><span>점수</span><b id="res-score"></b></div>
-        <div class="stat"><span>1분에 친 글자</span><b id="res-speed"></b></div>
-        <div class="stat"><span>정확도</span><b id="res-acc"></b></div>
-        <div class="stat"><span>최고 기록</span><b id="res-best"></b></div>
-        <div class="stat"><span>걸린 시간</span><b id="res-time"></b></div>
-      </div>
-      <p class="rank-msg" id="res-rank"></p>
-      <p class="sub" id="res-tip"></p>
-
-      <details class="card review">
-        <summary>문장별 결과 보기</summary>
-        <ol id="res-list"></ol>
-      </details>
-
-      <div class="actions">
-        <button class="btn" type="button" id="again">같은 주제 다시 하기</button>
-        <button class="btn ghost" type="button" data-back="topic">다른 주제 고르기</button>
-        <button class="btn ghost" type="button" id="see-ranking">🏆 랭킹 보기</button>
-      </div>
-    </section>
-
-    <!-- 5. 랭킹 -->
+    <!-- 4. 결과와 랭킹 -->
     <section class="screen" id="screen-ranking" hidden>
-      <button class="back" type="button" id="ranking-back">← 돌아가기</button>
-      <h1>🏆 랭킹</h1>
-      <div class="filters">
-        <select id="rank-grade" aria-label="학년"></select>
-        <select id="rank-topic" aria-label="주제"></select>
+      <div class="card my-result" id="my-result" hidden>
+        <h1 id="result-title">다 했어요!</h1>
+        <div class="stars" id="result-stars"></div>
+        <div class="stat-row">
+          <div class="stat big"><span>점수</span><b id="res-score"></b></div>
+          <div class="stat"><span>1분에 친 글자</span><b id="res-speed"></b></div>
+          <div class="stat"><span>정확도</span><b id="res-acc"></b></div>
+          <div class="stat"><span>최고 기록</span><b id="res-best"></b></div>
+          <div class="stat"><span>걸린 시간</span><b id="res-time"></b></div>
+        </div>
+        <p class="rank-msg" id="res-rank"></p>
+        <p class="sub" id="res-tip"></p>
+        <details class="review">
+          <summary>문장별 결과 보기</summary>
+          <ol id="res-list"></ol>
+        </details>
       </div>
+      <p class="notice small" id="quit-msg" hidden>중간에 그만해서 이번 기록은 랭킹에 등록되지 않았어요. 다음엔 5문장 끝까지 도전해요! 💪</p>
+
+      <button class="btn start" type="button" id="restart">🔄 다시 시작하기</button>
+
+      <h1>🏆 모산 타자왕 랭킹</h1>
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" data-tab="all">전체 랭킹</button>
+        <button type="button" role="tab" data-tab="grade">학년별</button>
+        <button type="button" role="tab" data-tab="topic">주제별</button>
+      </div>
+      <div class="sub-chips" id="rank-chips"></div>
       <table class="rank-table">
         <thead><tr><th>순위</th><th>이름</th><th>학년</th><th>주제</th><th>점수</th><th>글자/분</th><th>정확도</th></tr></thead>
         <tbody id="rank-body"></tbody>
       </table>
-      <p class="sub" id="rank-empty" hidden>아직 기록이 없어요. 첫 번째 주인공이 되어 보세요!</p>
-      <p class="hint">랭킹은 이 컴퓨터(브라우저)에 저장돼요. <button class="link" type="button" id="rank-clear">랭킹 지우기</button></p>
+      <p class="sub" id="rank-empty" hidden>아직 기록이 없어요. 첫 번째 타자왕이 되어 보세요!</p>
+      <p class="hint">같은 이름은 가장 높은 기록 하나만 보여요. 랭킹은 이 컴퓨터(브라우저)에 저장돼요. <button class="link" type="button" id="rank-clear">랭킹 지우기</button></p>
     </section>
   </main>
 

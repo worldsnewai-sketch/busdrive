@@ -1,8 +1,9 @@
 (() => {
-  const SENTENCES_PER_ROUND = 10;
-  const RANK_KEY = 'ssuk-typing-ranking-v2'; // v1은 타수 기준 기록
-  const NAME_KEY = 'ssuk-typing-name';
-  const RANK_LIMIT = 200; // 저장해 둘 최대 기록 수
+  const SENTENCES_PER_ROUND = 5;
+  const RANK_KEY = 'mosan-typing-ranking-v1';
+  const PLAYER_KEY = 'mosan-typing-player'; // 마지막으로 고른 학년과 이름
+  const RANK_LIMIT = 3000; // 저장해 둘 최대 기록 수 (이름·학년·주제마다 최고 기록 하나)
+  const TOP_N = 20;
   // 학년별 목표 점수(별 3개 기준). 점수 = 1분에 친 글자 수 × 정확도
   const GRADE_GOAL = { 1: 20, 2: 30, 3: 40, 4: 55, 5: 70, 6: 80 };
   const perMinute = (letters, secs) => Math.round((letters / secs) * 60);
@@ -19,8 +20,8 @@
     startedAt: 0, // 현재 문장의 시간을 재기 시작한 시각
     composing: false,
     results: [],
-    lastScreen: 'grade',
-    lastEntryId: null,
+    rankTab: 'all',
+    rankSel: '',
   };
 
   // ---------- 글자 수 계산 ----------
@@ -67,7 +68,6 @@
   // ---------- 화면 전환 ----------
   function show(name) {
     document.querySelectorAll('.screen').forEach((el) => { el.hidden = el.id !== `screen-${name}`; });
-    if (name !== 'ranking') state.lastScreen = name;
     window.scrollTo(0, 0);
   }
 
@@ -76,34 +76,64 @@
   });
   $('go-home').addEventListener('click', () => show('grade'));
 
-  // ---------- 1. 학년 ----------
+  // ---------- 1. 학년과 이름 ----------
   const nameInput = $('player-name');
-  try { nameInput.value = localStorage.getItem(NAME_KEY) || ''; } catch (e) { /* 저장소를 못 쓰는 환경 */ }
-
   const gradeList = $('grade-list');
+  const nameChips = $('name-chips');
+
   for (let g = 1; g <= 6; g++) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = `tile grade-${g}`;
+    btn.dataset.grade = g;
     btn.innerHTML = `<b>${g}</b><span>학년</span>`;
-    btn.addEventListener('click', () => chooseGrade(g));
+    btn.addEventListener('click', () => selectGrade(g));
     gradeList.appendChild(btn);
   }
 
-  function chooseGrade(g) {
-    const name = nameInput.value.trim();
-    if (!name) {
-      $('grade-hint').textContent = '먼저 이름을 써 주세요! ✏️';
-      nameInput.focus();
-      return;
-    }
-    $('grade-hint').textContent = '';
-    state.name = name;
+  function selectGrade(g) {
     state.grade = g;
-    try { localStorage.setItem(NAME_KEY, name); } catch (e) { /* 무시 */ }
-    $('topic-sub').textContent = `${name} 친구, ${g}학년에 맞는 문장이 나와요.`;
-    show('topic');
+    gradeList.querySelectorAll('.tile').forEach((el) => el.classList.toggle('selected', Number(el.dataset.grade) === g));
+    renderNameChips();
   }
+
+  // 이 컴퓨터에서 그 학년으로 연습했던 이름을 고를 수 있게 보여 줌
+  function renderNameChips() {
+    const names = [...new Set(loadRanking().filter((x) => x.grade === state.grade).map((x) => x.name))]
+      .sort((a, b) => a.localeCompare(b, 'ko'));
+    nameChips.textContent = '';
+    names.forEach((name) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip';
+      chip.textContent = name;
+      chip.addEventListener('click', () => {
+        nameInput.value = name;
+        markChip();
+      });
+      nameChips.appendChild(chip);
+    });
+    nameChips.hidden = names.length === 0;
+    markChip();
+  }
+
+  function markChip() {
+    const name = nameInput.value.trim();
+    nameChips.querySelectorAll('.chip').forEach((el) => el.classList.toggle('selected', el.textContent === name));
+  }
+  nameInput.addEventListener('input', markChip);
+
+  $('to-topic').addEventListener('click', () => {
+    const name = nameInput.value.trim();
+    const hint = $('grade-hint');
+    if (!state.grade) { hint.textContent = '먼저 학년을 골라 주세요! 🙌'; return; }
+    if (!name) { hint.textContent = '이름을 고르거나 써 주세요! ✏️'; nameInput.focus(); return; }
+    hint.textContent = '';
+    state.name = name;
+    try { localStorage.setItem(PLAYER_KEY, JSON.stringify({ grade: state.grade, name })); } catch (e) { /* 무시 */ }
+    $('topic-sub').textContent = `${name} 친구, ${state.grade}학년에 맞는 문장이 나와요.`;
+    show('topic');
+  });
 
   // ---------- 2. 주제 ----------
   const topicList = $('topic-list');
@@ -214,9 +244,8 @@
     else loadSentence();
   }
 
-  $('quit').addEventListener('click', () => {
-    if (confirm('연습을 그만할까요? 지금까지 한 기록은 저장되지 않아요.')) show('topic');
-  });
+  // 중간에 그만두면 기록 없이 랭킹 화면으로
+  $('quit').addEventListener('click', () => openRanking('all', '', 'quit'));
 
   // ---------- 4. 결과 ----------
   function finishRound() {
@@ -244,8 +273,7 @@
       accuracy: accPct,
       date: new Date().toISOString(),
     };
-    const rank = saveEntry(entry);
-    state.lastEntryId = entry.id;
+    saveEntry(entry);
 
     $('result-title').textContent = ['', '잘했어요! 👍', '아주 잘했어요! 🎉', '최고예요! 🏅'][stars];
     $('result-stars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
@@ -254,7 +282,12 @@
     $('res-acc').textContent = `${accPct}%`;
     $('res-best').textContent = `${best}자`;
     $('res-time').textContent = formatTime(totalSecs);
-    $('res-rank').textContent = `${state.grade}학년 · ${state.topic.name} 랭킹 ${rank}등!`;
+    const board = rankRows('grade', String(state.grade));
+    const rank = board.findIndex((x) => x.name === state.name) + 1;
+    const myBest = board[rank - 1];
+    $('res-rank').textContent = myBest && myBest.score > score
+      ? `${state.grade}학년 랭킹 ${rank}등 (내 최고 기록 ${myBest.score}점)`
+      : `${state.grade}학년 랭킹 ${rank}등!`;
     $('res-tip').textContent = tipFor(accPct, score, goal);
 
     const list = $('res-list');
@@ -276,7 +309,7 @@
       list.appendChild(li);
     });
 
-    show('result');
+    openRanking('grade', String(state.grade), 'result');
   }
 
   function tipFor(acc, score, goal) {
@@ -291,52 +324,75 @@
     return s >= 60 ? `${Math.floor(s / 60)}분 ${s % 60}초` : `${s}초`;
   }
 
-  $('again').addEventListener('click', () => startRound(state.topic));
-  $('see-ranking').addEventListener('click', () => openRanking(String(state.grade), state.topic.id));
 
   // ---------- 5. 랭킹 ----------
   function loadRanking() {
     try { return JSON.parse(localStorage.getItem(RANK_KEY)) || []; } catch (e) { return []; }
   }
 
+  const byScore = (a, b) => b.score - a.score || b.accuracy - a.accuracy;
+
+  // 이름·학년·주제마다 가장 높은 기록만 남김
   function saveEntry(entry) {
-    let list = loadRanking();
-    list.push(entry);
-    list.sort((a, b) => b.score - a.score || b.accuracy - a.accuracy);
-    list = list.slice(0, RANK_LIMIT);
+    const key = (x) => `${x.name}|${x.grade}|${x.topic}`;
+    const best = new Map();
+    [...loadRanking(), entry].sort(byScore).forEach((x) => { if (!best.has(key(x))) best.set(key(x), x); });
+    const list = [...best.values()].slice(0, RANK_LIMIT);
     try { localStorage.setItem(RANK_KEY, JSON.stringify(list)); } catch (e) { /* 무시 */ }
-    const same = list.filter((x) => x.grade === entry.grade && x.topic === entry.topic);
-    const pos = same.findIndex((x) => x.id === entry.id);
-    return pos >= 0 ? pos + 1 : same.length + 1;
   }
 
-  const rankGrade = $('rank-grade');
-  const rankTopic = $('rank-topic');
-  rankGrade.add(new Option('모든 학년', 'all'));
-  for (let g = 1; g <= 6; g++) rankGrade.add(new Option(`${g}학년`, String(g)));
-  rankTopic.add(new Option('모든 주제', 'all'));
-  topics.forEach((t) => rankTopic.add(new Option(`${t.icon} ${t.name}`, t.id)));
-  rankGrade.addEventListener('change', renderRanking);
-  rankTopic.addEventListener('change', renderRanking);
+  // 같은 이름은 가장 높은 기록 하나만
+  function rankRows(tab, sel) {
+    const seen = new Set();
+    return loadRanking()
+      .filter((x) => tab === 'all' || (tab === 'grade' ? String(x.grade) === sel : x.topic === sel))
+      .sort(byScore)
+      .filter((x) => !seen.has(x.name) && seen.add(x.name));
+  }
 
-  function openRanking(grade = 'all', topic = 'all') {
-    rankGrade.value = grade;
-    rankTopic.value = topic;
+  const rankChips = $('rank-chips');
+  const tabs = document.querySelectorAll('.tabs [data-tab]');
+  tabs.forEach((btn) => btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    const sel = tab === 'grade' ? String(state.grade || 1) : tab === 'topic' ? (state.topic || topics[0]).id : '';
+    openRanking(tab, sel, currentMode());
+  }));
+  const currentMode = () => (!$('my-result').hidden ? 'result' : !$('quit-msg').hidden ? 'quit' : '');
+
+  // mode: 'result' = 5문장을 끝낸 뒤, 'quit' = 중간에 그만둔 뒤
+  function openRanking(tab = 'all', sel = '', mode = '') {
+    state.rankTab = tab;
+    state.rankSel = sel;
+    $('my-result').hidden = mode !== 'result';
+    $('quit-msg').hidden = mode !== 'quit';
     renderRanking();
     show('ranking');
   }
 
   function renderRanking() {
-    const g = rankGrade.value;
-    const t = rankTopic.value;
-    const rows = loadRanking()
-      .filter((x) => (g === 'all' || String(x.grade) === g) && (t === 'all' || x.topic === t))
-      .slice(0, 20);
+    const { rankTab: tab, rankSel: sel } = state;
+    tabs.forEach((btn) => btn.setAttribute('aria-selected', String(btn.dataset.tab === tab)));
+
+    const options = tab === 'grade'
+      ? [1, 2, 3, 4, 5, 6].map((g) => [String(g), `${g}학년`])
+      : tab === 'topic' ? topics.map((t) => [t.id, `${t.icon} ${t.name}`]) : [];
+    rankChips.textContent = '';
+    options.forEach(([value, label]) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = `chip${value === sel ? ' selected' : ''}`;
+      chip.textContent = label;
+      chip.addEventListener('click', () => openRanking(tab, value, currentMode()));
+      rankChips.appendChild(chip);
+    });
+    rankChips.hidden = options.length === 0;
+
+    const rows = rankRows(tab, sel).slice(0, TOP_N);
     const body = $('rank-body');
     body.textContent = '';
     rows.forEach((x, i) => {
       const tr = document.createElement('tr');
-      if (x.id === state.lastEntryId) tr.className = 'me';
+      if (x.name === state.name) tr.className = 'me';
       const topic = topicById(x.topic);
       const medal = ['🥇', '🥈', '🥉'][i] || String(i + 1);
       [medal, x.name, `${x.grade}학년`, topic ? `${topic.icon} ${topic.name}` : '-', x.score, `${x.speed}자`, `${x.accuracy}%`]
@@ -350,16 +406,32 @@
     $('rank-empty').hidden = rows.length > 0;
   }
 
-  $('go-ranking').addEventListener('click', () => {
-    if (!$('screen-play').hidden && state.index > 0 && !confirm('연습 중이에요. 랭킹을 보러 갈까요?')) return;
-    openRanking();
-  });
-  $('ranking-back').addEventListener('click', () => show(state.lastScreen === 'play' ? 'topic' : state.lastScreen));
-  $('rank-clear').addEventListener('click', () => {
-    if (!confirm('이 컴퓨터에 저장된 랭킹을 모두 지울까요?')) return;
+  $('go-ranking').addEventListener('click', () => openRanking('all', '', $('screen-play').hidden ? '' : 'quit'));
+  $('restart').addEventListener('click', () => show('grade'));
+
+  // 확인 창(confirm)은 앱 페이지 안에서 막히므로, 두 번 눌러야 지워지게 함
+  const clearBtn = $('rank-clear');
+  let clearTimer = 0;
+  clearBtn.addEventListener('click', () => {
+    if (!clearTimer) {
+      clearBtn.textContent = '정말 지울까요? 한 번 더 누르세요';
+      clearTimer = setTimeout(() => { clearTimer = 0; clearBtn.textContent = '랭킹 지우기'; }, 3000);
+      return;
+    }
+    clearTimeout(clearTimer);
+    clearTimer = 0;
+    clearBtn.textContent = '랭킹 지우기';
     try { localStorage.removeItem(RANK_KEY); } catch (e) { /* 무시 */ }
     renderRanking();
+    renderNameChips();
   });
+
+  // 지난번에 고른 학년과 이름을 미리 골라 둠
+  try {
+    const last = JSON.parse(localStorage.getItem(PLAYER_KEY));
+    if (last) { nameInput.value = last.name || ''; if (last.grade) selectGrade(last.grade); }
+  } catch (e) { /* 무시 */ }
+  if (!state.grade) renderNameChips();
 
   show('grade');
 })();
