@@ -5,7 +5,11 @@
   const RANK_LIMIT = 3000; // 저장해 둘 최대 기록 수 (이름·학년·주제마다 최고 기록 하나)
   const TOP_N = 20;
   // 학년별 목표 점수(별 3개 기준). 점수 = 1분에 친 글자 수 × 정확도
-  const GRADE_GOAL = { 1: 20, 2: 30, 3: 40, 4: 55, 5: 70, 6: 80 };
+  const GRADE_GOAL = { 1: 20, 2: 30, 3: 40, 4: 55, 5: 70, 6: 80, 7: 100 };
+  // 교직원은 학년 7로 저장하고 5~6학년 문장을 씀
+  const STAFF = 7;
+  const GRADES = [1, 2, 3, 4, 5, 6, STAFF];
+  const gradeLabel = (g) => (Number(g) === STAFF ? '교직원' : `${g}학년`);
   const perMinute = (letters, secs) => Math.round((letters / secs) * 60);
 
   const $ = (id) => document.getElementById(id);
@@ -68,6 +72,7 @@
   // ---------- 화면 전환 ----------
   function show(name) {
     document.querySelectorAll('.screen').forEach((el) => { el.hidden = el.id !== `screen-${name}`; });
+    if (name === 'grade') renderHall();
     window.scrollTo(0, 0);
   }
 
@@ -81,15 +86,15 @@
   const gradeList = $('grade-list');
   const nameChips = $('name-chips');
 
-  for (let g = 1; g <= 6; g++) {
+  GRADES.forEach((g) => {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = `tile grade-${g}`;
     btn.dataset.grade = g;
-    btn.innerHTML = `<b>${g}</b><span>학년</span>`;
+    btn.innerHTML = g === STAFF ? '<b>🧑‍🏫</b><span>교직원</span>' : `<b>${g}</b><span>학년</span>`;
     btn.addEventListener('click', () => selectGrade(g));
     gradeList.appendChild(btn);
-  }
+  });
 
   function selectGrade(g) {
     state.grade = g;
@@ -131,7 +136,9 @@
     hint.textContent = '';
     state.name = name;
     try { localStorage.setItem(PLAYER_KEY, JSON.stringify({ grade: state.grade, name })); } catch (e) { /* 무시 */ }
-    $('topic-sub').textContent = `${name} 친구, ${state.grade}학년에 맞는 문장이 나와요.`;
+    $('topic-sub').textContent = state.grade === STAFF
+      ? `${name} 선생님, 5~6학년 문장으로 도전해 보세요!`
+      : `${name} 친구, ${state.grade}학년에 맞는 문장이 나와요.`;
     show('topic');
   });
 
@@ -155,7 +162,7 @@
     state.sentences = shuffle(topic[band(state.grade)]).slice(0, SENTENCES_PER_ROUND);
     state.index = 0;
     state.results = [];
-    $('play-topic').textContent = `${topic.icon} ${topic.name} · ${state.grade}학년`;
+    $('play-topic').textContent = `${topic.icon} ${topic.name} · ${gradeLabel(state.grade)}`;
     show('play');
     loadSentence();
   }
@@ -286,8 +293,8 @@
     const rank = board.findIndex((x) => x.name === state.name) + 1;
     const myBest = board[rank - 1];
     $('res-rank').textContent = myBest && myBest.score > score
-      ? `${state.grade}학년 랭킹 ${rank}등 (내 최고 기록 ${myBest.score}점)`
-      : `${state.grade}학년 랭킹 ${rank}등!`;
+      ? `${gradeLabel(state.grade)} 랭킹 ${rank}등 (내 최고 기록 ${myBest.score}점)`
+      : `${gradeLabel(state.grade)} 랭킹 ${rank}등!`;
     $('res-tip').textContent = tipFor(accPct, score, goal);
 
     const list = $('res-list');
@@ -374,7 +381,7 @@
     tabs.forEach((btn) => btn.setAttribute('aria-selected', String(btn.dataset.tab === tab)));
 
     const options = tab === 'grade'
-      ? [1, 2, 3, 4, 5, 6].map((g) => [String(g), `${g}학년`])
+      ? GRADES.map((g) => [String(g), gradeLabel(g)])
       : tab === 'topic' ? topics.map((t) => [t.id, `${t.icon} ${t.name}`]) : [];
     rankChips.textContent = '';
     options.forEach(([value, label]) => {
@@ -395,7 +402,7 @@
       if (x.name === state.name) tr.className = 'me';
       const topic = topicById(x.topic);
       const medal = ['🥇', '🥈', '🥉'][i] || String(i + 1);
-      [medal, x.name, `${x.grade}학년`, topic ? `${topic.icon} ${topic.name}` : '-', x.score, `${x.speed}자`, `${x.accuracy}%`]
+      [medal, x.name, gradeLabel(x.grade), topic ? `${topic.icon} ${topic.name}` : '-', x.score, `${x.speed}자`, `${x.accuracy}%`]
         .forEach((v) => {
           const td = document.createElement('td');
           td.textContent = v;
@@ -425,6 +432,29 @@
     renderRanking();
     renderNameChips();
   });
+
+  // ---------- 첫 화면 명예의 전당: 전체 1위와 학년별 1위 ----------
+  function renderHall() {
+    const hall = $('hall');
+    hall.textContent = '';
+    const boards = [['all', '', '전체 1위']].concat(GRADES.map((g) => ['grade', String(g), gradeLabel(g)]));
+    boards.forEach(([tab, sel, label]) => {
+      const top = rankRows(tab, sel)[0];
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = `hall-card${tab === 'all' ? ' champion' : ''}${top ? '' : ' empty'}`;
+      const head = document.createElement('span');
+      head.className = 'hall-label';
+      head.textContent = tab === 'all' ? `👑 ${label}` : label;
+      const who = document.createElement('b');
+      who.textContent = top ? top.name : '도전!';
+      const score = document.createElement('small');
+      score.textContent = top ? `${top.score}점` : '비어 있어요';
+      card.append(head, who, score);
+      card.addEventListener('click', () => openRanking(tab, sel));
+      hall.appendChild(card);
+    });
+  }
 
   // 지난번에 고른 학년과 이름을 미리 골라 둠
   try {

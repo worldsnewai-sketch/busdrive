@@ -109,7 +109,7 @@ kbd { background: var(--card); border: 1px solid var(--line); border-bottom-widt
 
 /* 타일 */
 .grid { display: grid; gap: 12px; }
-.grade-grid { grid-template-columns: repeat(6, 1fr); }
+.grade-grid { grid-template-columns: repeat(7, 1fr); }
 .topic-grid { grid-template-columns: repeat(4, 1fr); }
 .tile {
   border: 3px solid transparent;
@@ -132,6 +132,34 @@ kbd { background: var(--card); border: 1px solid var(--line); border-bottom-widt
 .tile.selected { border-color: var(--brand); transform: translateY(-3px); box-shadow: 0 5px 0 var(--brand); }
 .grade-1 { background: #ffe1db; } .grade-2 { background: #ffe9cc; } .grade-3 { background: #e1f3dc; }
 .grade-4 { background: #dbeefd; } .grade-5 { background: #e5f4e2; } .grade-6 { background: #dfe6f7; }
+.grade-7 { background: #f3e3d3; }
+.grade-7 b { font-size: 2.2rem; }
+.step small { font-family: 'Nanum Gothic', sans-serif; font-size: .9rem; color: var(--muted); }
+
+/* 명예의 전당 */
+.hall-title { text-align: center; font-size: 1.5rem; margin: 22px 0 10px; }
+.hall { display: grid; grid-template-columns: 1.6fr repeat(7, 1fr); gap: 8px; }
+.hall-card {
+  border: 0;
+  border-radius: 16px;
+  padding: 10px 4px;
+  background: var(--card);
+  box-shadow: 0 4px 0 var(--line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+.hall-card:hover { transform: translateY(-2px); }
+.hall-label { font-size: .85rem; color: var(--muted); }
+.hall-card b { font-family: 'Jua', sans-serif; font-weight: 400; font-size: 1.25rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hall-card small { color: var(--brand-dark); font-weight: 700; }
+.hall-card.empty b { color: #b9b2a3; }
+.hall-card.empty small { color: var(--muted); font-weight: 400; }
+.hall-card.champion { background: linear-gradient(160deg, #ffd65a, #f2a93b); box-shadow: 0 4px 0 #c98318; }
+.hall-card.champion .hall-label, .hall-card.champion small { color: #6b3b00; }
+.hall-card.champion b { font-size: 1.7rem; color: #3b2300; }
 
 /* 이름 고르기 */
 .name-chips, .sub-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
@@ -258,7 +286,10 @@ kbd { background: var(--card); border: 1px solid var(--line); border-bottom-widt
   h1 { font-size: 1.6rem; }
   .hero { aspect-ratio: 16 / 9; }
   .hero-title b { font-size: 1.9rem; }
-  .grade-grid { grid-template-columns: repeat(3, 1fr); }
+  .grade-grid { grid-template-columns: repeat(4, 1fr); }
+  .tile { padding: 12px 4px; }
+  .hall { grid-template-columns: repeat(4, 1fr); }
+  .hall-card.champion { grid-column: span 4; }
   .topic-grid { grid-template-columns: repeat(2, 1fr); }
   .target { font-size: 1.4rem; }
   #typing-input { font-size: 1.3rem; }
