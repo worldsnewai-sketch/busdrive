@@ -6,7 +6,7 @@
   <title>모산 타자왕</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Gothic:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=11">
+  <link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
   <header class="topbar">
@@ -96,6 +96,20 @@
         </div>
       </div>
 
+      <!-- 노트북 화면에서도 스크롤 없이 학년·이름까지 보이도록 입력을 먼저, 명예의 전당과 설명은 아래에 -->
+      <h2 class="step"><i>1</i> 몇 학년이에요? <small>(선생님은 교직원)</small></h2>
+      <div class="grid grade-grid" id="grade-list"></div>
+
+      <h2 class="step"><i>2</i> 이름을 골라요</h2>
+      <div class="name-chips" id="name-chips"></div>
+      <div class="name-row">
+        <label class="name-field">
+          <input id="player-name" type="text" maxlength="10" placeholder="처음이면 이름을 써요" autocomplete="off">
+        </label>
+        <button class="btn start" type="button" id="to-topic">안전 주제 고르기 →</button>
+      </div>
+      <p class="hint" id="grade-hint"></p>
+
       <h2 class="hall-title">🏆 명예의 전당</h2>
       <div class="hall" id="hall"></div>
 
@@ -104,18 +118,6 @@
         학년과 이름을 고르고, 안전 주제를 골라 문장 5개를 따라 써요.<br>
         <strong>5문장을 모두 입력해야 랭킹에 등록돼요!</strong>
       </div>
-
-      <h2 class="step"><i>1</i> 몇 학년이에요? <small>(선생님은 교직원)</small></h2>
-      <div class="grid grade-grid" id="grade-list"></div>
-
-      <h2 class="step"><i>2</i> 이름을 골라요</h2>
-      <div class="name-chips" id="name-chips"></div>
-      <label class="name-field">
-        <input id="player-name" type="text" maxlength="10" placeholder="처음이면 이름을 써요" autocomplete="off">
-      </label>
-
-      <button class="btn start" type="button" id="to-topic">안전 주제 고르기 →</button>
-      <p class="hint" id="grade-hint"></p>
     </section>
 
     <!-- 2. 주제 -->
@@ -194,7 +196,7 @@
     </section>
   </main>
 
-  <script src="sentences.js?v=11"></script>
-  <script src="app.js?v=11"></script>
+  <script src="sentences.js?v=12"></script>
+  <script src="app.js?v=12"></script>
 </body>
 </html>
