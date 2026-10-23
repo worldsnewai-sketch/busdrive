@@ -4,7 +4,7 @@
   const NAME_KEY = 'ssuk-typing-name';
   const RANK_LIMIT = 200; // 저장해 둘 최대 기록 수
   // 학년별 목표 점수(별 3개 기준). 점수 = 평균 타수 × 정확도
-  const GRADE_GOAL = { 1: 50, 2: 80, 3: 110, 4: 140, 5: 170, 6: 200 };
+  const GRADE_GOAL = { 1: 40, 2: 60, 3: 90, 4: 120, 5: 150, 6: 180 };
 
   const $ = (id) => document.getElementById(id);
   const topics = window.TOPICS;
@@ -15,7 +15,7 @@
     topic: null,
     sentences: [],
     index: 0,
-    startedAt: 0, // 현재 문장에서 첫 키를 누른 시각
+    startedAt: 0, // 현재 문장의 시간을 재기 시작한 시각
     composing: false,
     results: [],
     lastScreen: 'grade',
@@ -60,6 +60,12 @@
   function correctChars(target, typed) {
     const len = [...target].length;
     return Math.max(0, len - editDistance(target, typed));
+  }
+
+  // 맞게 친 타수(정타수): 문장의 타수에서 틀린 글자 비율만큼 뺌
+  function correctStrokes(target, typed) {
+    const len = [...target].length;
+    return len ? keystrokes(target) * (correctChars(target, typed) / len) : 0;
   }
 
   function shuffle(list) {
@@ -148,7 +154,8 @@
     const next = state.sentences[i + 1];
     $('next-sentence').textContent = next ? `다음: ${next}` : '마지막 문장이에요! 💪';
     input.value = '';
-    state.startedAt = 0;
+    // 첫 문장은 첫 키를 누를 때부터, 그다음 문장은 미리 보여 줬으니 나타난 순간부터 잰다
+    state.startedAt = i > 0 ? performance.now() : 0;
     renderTarget();
     updateLive();
     input.focus();
@@ -176,9 +183,9 @@
   function updateLive() {
     const typed = input.value;
     const secs = state.startedAt ? (performance.now() - state.startedAt) / 1000 : 0;
-    const speed = secs > 0.5 ? Math.round((keystrokes(typed) / secs) * 60) : 0;
     const target = state.sentences[state.index];
     const head = [...target].slice(0, [...typed].length).join('');
+    const speed = secs > 1 && typed ? Math.round((correctStrokes(head, typed) / secs) * 60) : 0;
     const acc = typed ? Math.round((correctChars(head, typed) / Math.max(1, [...head].length)) * 100) : 100;
     $('live-speed').textContent = speed;
     $('live-acc').textContent = `${acc}%`;
@@ -208,7 +215,7 @@
     if (!typed) return;
     const target = state.sentences[state.index];
     const secs = Math.max(0.5, (performance.now() - (state.startedAt || performance.now())) / 1000);
-    const strokes = keystrokes(typed);
+    const strokes = correctStrokes(target, typed);
     state.results.push({
       target,
       typed,
