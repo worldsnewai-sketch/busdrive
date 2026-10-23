@@ -23,9 +23,14 @@ async function read() {
   return { entries: JSON.parse(text || '[]'), etag: res.blob.etag };
 }
 
+// 다른 요청과 부딪혀서 생기는 오류: ETag 불일치, 동시 작업 충돌, 처음 만들 때 이미 있음
+const isConflict = (e) =>
+  e instanceof BlobPreconditionFailedError || /already exists|conflict|precondition/i.test(String(e && e.message));
+
 // change(entries)로 새 목록을 만들어 저장. 다른 요청이 먼저 저장했으면 다시 읽어서 재시도
+// (저장 한 번에 1초쯤 걸려서, 반 전체가 한꺼번에 끝내도 기다렸다 저장되도록 넉넉히 재시도)
 async function update(change) {
-  for (let attempt = 0; attempt < 8; attempt++) {
+  for (let attempt = 0; attempt < 30; attempt++) {
     const { entries, etag } = await read();
     const next = change(entries);
     try {
@@ -37,9 +42,8 @@ async function update(change) {
       });
       return next;
     } catch (e) {
-      const conflict = e instanceof BlobPreconditionFailedError || /already exists/i.test(String(e && e.message));
-      if (!conflict) throw e;
-      await sleep(40 + Math.random() * 200);
+      if (!isConflict(e)) throw e;
+      await sleep(Math.min(2000, 150 * (attempt + 1)) * (0.5 + Math.random()));
     }
   }
   throw new Error('busy');
