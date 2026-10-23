@@ -402,11 +402,12 @@
     });
   }
 
-  // 같은 이름은 가장 높은 기록 하나만
+  // 같은 이름은 가장 높은 기록 하나만. 전체 랭킹은 학생끼리만 겨루도록 교직원을 빼고 보여 줌
+  // (교직원 기록은 지우지 않고 학년별 '교직원'에서 볼 수 있음)
   function rankRows(tab, sel) {
     const seen = new Set();
     return loadRanking()
-      .filter((x) => tab === 'all' || (tab === 'grade' ? String(x.grade) === sel : x.topic === sel))
+      .filter((x) => (tab === 'all' ? x.grade !== STAFF : tab === 'grade' ? String(x.grade) === sel : x.topic === sel))
       .sort(byScore)
       .filter((x) => !seen.has(x.name) && seen.add(x.name));
   }
