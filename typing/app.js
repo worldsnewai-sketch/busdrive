@@ -287,7 +287,7 @@
       y.textContent = x.typed;
       const m = document.createElement('div');
       m.className = 'r-meta';
-      m.textContent = `${x.speed}타 · 정확도 ${pct}%`;
+      m.textContent = `${Math.round(x.strokes)}타를 ${x.secs.toFixed(1)}초에 → 1분에 ${x.speed}타 · 정확도 ${pct}%`;
       li.append(t, y, m);
       list.appendChild(li);
     });
