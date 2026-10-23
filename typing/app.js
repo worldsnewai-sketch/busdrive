@@ -341,6 +341,8 @@
   const API = 'api/scores';
   let shared = null; // 서버에서 받은 랭킹. null이면 이 컴퓨터에만 저장
   let saves = 0; // 저장한 횟수. 저장보다 먼저 출발한 불러오기 결과는 버림
+  // 서버가 랭킹을 몇 초 동안 재사용하므로, 방금 저장한 기록은 잠깐 동안 직접 끼워 넣음
+  let justSaved = null; // { entry, at }
 
   function loadLocal() {
     try { return JSON.parse(localStorage.getItem(RANK_KEY)) || []; } catch (e) { return []; }
@@ -367,7 +369,8 @@
       const res = await fetch(API, { cache: 'no-store' });
       if (!res.ok) throw new Error(String(res.status));
       const { entries } = await res.json();
-      if (started === saves) shared = entries;
+      if (started !== saves) return;
+      shared = justSaved && Date.now() - justSaved.at < 20000 ? keepBest([...entries, justSaved.entry]) : entries;
     } catch (e) { /* 서버가 없으면 이 컴퓨터 기록을 씀 */ }
     $('storage-hint').textContent = shared
       ? '랭킹은 모산초등학교 모두가 함께 봐요.'
@@ -384,6 +387,7 @@
       const res = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(entry) });
       if (!res.ok) return false;
       shared = (await res.json()).entries;
+      justSaved = { entry: { ...entry, date: new Date().toISOString() }, at: Date.now() };
       return true;
     } catch (e) {
       return false;
@@ -494,6 +498,7 @@
         const data = await res.json();
         if (!res.ok) { adminMsg.textContent = data.error || '지우지 못했어요.'; return; }
         shared = data.entries;
+        justSaved = null;
       } catch (e) {
         adminMsg.textContent = '인터넷 연결을 확인해 주세요.';
         return;
