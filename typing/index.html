@@ -6,7 +6,7 @@
   <title>모산 타자왕</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Gothic:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=8">
+  <link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
   <header class="topbar">
@@ -184,11 +184,17 @@
         <tbody id="rank-body"></tbody>
       </table>
       <p class="sub" id="rank-empty" hidden>아직 기록이 없어요. 첫 번째 타자왕이 되어 보세요!</p>
-      <p class="hint">같은 이름은 가장 높은 기록 하나만 보여요. 랭킹은 이 컴퓨터(브라우저)에 저장돼요. <button class="link" type="button" id="rank-clear">랭킹 지우기</button></p>
+      <p class="hint">같은 이름은 가장 높은 기록 하나만 보여요. <span id="storage-hint">랭킹을 불러오는 중…</span> <button class="link" type="button" id="admin-toggle">관리자</button></p>
+      <div class="admin card" id="admin" hidden>
+        <input id="admin-pass" type="password" placeholder="관리자 비밀번호" autocomplete="off">
+        <input id="admin-name" type="text" placeholder="지울 이름 (비우면 전체)" autocomplete="off">
+        <button class="btn ghost" type="button" id="admin-delete">기록 지우기</button>
+        <p class="hint" id="admin-msg"></p>
+      </div>
     </section>
   </main>
 
-  <script src="sentences.js?v=8"></script>
-  <script src="app.js?v=8"></script>
+  <script src="sentences.js?v=9"></script>
+  <script src="app.js?v=9"></script>
 </body>
 </html>

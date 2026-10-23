@@ -72,7 +72,7 @@
   // ---------- 화면 전환 ----------
   function show(name) {
     document.querySelectorAll('.screen').forEach((el) => { el.hidden = el.id !== `screen-${name}`; });
-    if (name === 'grade') renderHall();
+    if (name === 'grade') { renderHall(); refresh(); }
     window.scrollTo(0, 0);
   }
 
@@ -255,7 +255,7 @@
   $('quit').addEventListener('click', () => openRanking('all', '', 'quit'));
 
   // ---------- 4. 결과 ----------
-  function finishRound() {
+  async function finishRound() {
     $('progress-bar').style.width = '100%';
     const r = state.results;
     const totalSecs = r.reduce((s, x) => s + x.secs, 0);
@@ -271,16 +271,13 @@
     if (accPct < 70) stars = 1;
 
     const entry = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       name: state.name,
       grade: state.grade,
       topic: state.topic.id,
       score,
       speed,
       accuracy: accPct,
-      date: new Date().toISOString(),
     };
-    saveEntry(entry);
 
     $('result-title').textContent = ['', '잘했어요! 👍', '아주 잘했어요! 🎉', '최고예요! 🏅'][stars];
     $('result-stars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
@@ -289,12 +286,7 @@
     $('res-acc').textContent = `${accPct}%`;
     $('res-best').textContent = `${best}자`;
     $('res-time').textContent = formatTime(totalSecs);
-    const board = rankRows('grade', String(state.grade));
-    const rank = board.findIndex((x) => x.name === state.name) + 1;
-    const myBest = board[rank - 1];
-    $('res-rank').textContent = myBest && myBest.score > score
-      ? `${gradeLabel(state.grade)} 랭킹 ${rank}등 (내 최고 기록 ${myBest.score}점)`
-      : `${gradeLabel(state.grade)} 랭킹 ${rank}등!`;
+    $('res-rank').textContent = '랭킹에 등록하는 중… ⏳';
     $('res-tip').textContent = tipFor(accPct, score, goal);
 
     const list = $('res-list');
@@ -317,6 +309,17 @@
     });
 
     openRanking('grade', String(state.grade), 'result');
+
+    const saved = await saveEntry(entry);
+    const board = rankRows('grade', String(state.grade));
+    const rank = board.findIndex((x) => x.name === state.name) + 1;
+    const myBest = board[rank - 1];
+    $('res-rank').textContent = !saved
+      ? '인터넷 연결이 불안정해서 랭킹에 등록하지 못했어요. 😢'
+      : myBest && myBest.score > score
+        ? `${gradeLabel(state.grade)} 랭킹 ${rank}등 (내 최고 기록 ${myBest.score}점)`
+        : `${gradeLabel(state.grade)} 랭킹 ${rank}등!`;
+    renderRanking();
   }
 
   function tipFor(acc, score, goal) {
@@ -333,19 +336,66 @@
 
 
   // ---------- 5. 랭킹 ----------
-  function loadRanking() {
+  // Vercel에 올리면 api/scores로 학교 전체가 같은 랭킹을 씀.
+  // 서버가 없으면(파일로 열었거나 미리보기) 이 컴퓨터(localStorage)에 저장
+  const API = 'api/scores';
+  let shared = null; // 서버에서 받은 랭킹. null이면 이 컴퓨터에만 저장
+  let saves = 0; // 저장한 횟수. 저장보다 먼저 출발한 불러오기 결과는 버림
+
+  function loadLocal() {
     try { return JSON.parse(localStorage.getItem(RANK_KEY)) || []; } catch (e) { return []; }
   }
+  const loadRanking = () => shared || loadLocal();
 
   const byScore = (a, b) => b.score - a.score || b.accuracy - a.accuracy;
 
   // 이름·학년·주제마다 가장 높은 기록만 남김
-  function saveEntry(entry) {
+  function keepBest(list) {
     const key = (x) => `${x.name}|${x.grade}|${x.topic}`;
     const best = new Map();
-    [...loadRanking(), entry].sort(byScore).forEach((x) => { if (!best.has(key(x))) best.set(key(x), x); });
-    const list = [...best.values()].slice(0, RANK_LIMIT);
+    list.slice().sort(byScore).forEach((x) => { if (!best.has(key(x))) best.set(key(x), x); });
+    return [...best.values()].slice(0, RANK_LIMIT);
+  }
+
+  function saveLocal(list) {
     try { localStorage.setItem(RANK_KEY, JSON.stringify(list)); } catch (e) { /* 무시 */ }
+  }
+
+  async function fetchRanking() {
+    const started = saves;
+    try {
+      const res = await fetch(API, { cache: 'no-store' });
+      if (!res.ok) throw new Error(String(res.status));
+      const { entries } = await res.json();
+      if (started === saves) shared = entries;
+    } catch (e) { /* 서버가 없으면 이 컴퓨터 기록을 씀 */ }
+    $('storage-hint').textContent = shared
+      ? '랭킹은 모산초등학교 모두가 함께 봐요.'
+      : '랭킹은 이 컴퓨터(브라우저)에 저장돼요.';
+  }
+
+  async function saveEntry(entry) {
+    saves++;
+    if (!shared) {
+      saveLocal(keepBest([...loadLocal(), { ...entry, date: new Date().toISOString() }]));
+      return true;
+    }
+    try {
+      const res = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(entry) });
+      if (!res.ok) return false;
+      shared = (await res.json()).entries;
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // 화면을 바꾼 뒤 최신 랭킹을 받아 다시 그림
+  function refresh() {
+    fetchRanking().then(() => {
+      if (!$('screen-grade').hidden) { renderHall(); renderNameChips(); }
+      if (!$('screen-ranking').hidden) renderRanking();
+    });
   }
 
   // 같은 이름은 가장 높은 기록 하나만
@@ -374,6 +424,7 @@
     $('quit-msg').hidden = mode !== 'quit';
     renderRanking();
     show('ranking');
+    if (mode !== 'result') refresh();
   }
 
   function renderRanking() {
@@ -416,21 +467,43 @@
   $('go-ranking').addEventListener('click', () => openRanking('all', '', $('screen-play').hidden ? '' : 'quit'));
   $('restart').addEventListener('click', () => show('grade'));
 
-  // 확인 창(confirm)은 앱 페이지 안에서 막히므로, 두 번 눌러야 지워지게 함
-  const clearBtn = $('rank-clear');
-  let clearTimer = 0;
-  clearBtn.addEventListener('click', () => {
-    if (!clearTimer) {
-      clearBtn.textContent = '정말 지울까요? 한 번 더 누르세요';
-      clearTimer = setTimeout(() => { clearTimer = 0; clearBtn.textContent = '랭킹 지우기'; }, 3000);
+  // ---------- 관리자: 기록 지우기 ----------
+  // 학교 랭킹은 관리자 비밀번호가 있어야 지울 수 있음. 이름을 비우면 전체를 지움
+  // (확인 창 confirm은 앱 페이지 안에서 막히므로 전체 삭제는 두 번 눌러야 함)
+  $('admin-toggle').addEventListener('click', () => { $('admin').hidden = !$('admin').hidden; });
+  const adminBtn = $('admin-delete');
+  const adminMsg = $('admin-msg');
+  let wipeTimer = 0;
+  adminBtn.addEventListener('click', async () => {
+    const name = $('admin-name').value.trim();
+    if (!name && !wipeTimer) {
+      adminMsg.textContent = '이름을 비우면 모든 기록이 지워져요. 정말 지우려면 한 번 더 누르세요.';
+      wipeTimer = setTimeout(() => { wipeTimer = 0; adminMsg.textContent = ''; }, 4000);
       return;
     }
-    clearTimeout(clearTimer);
-    clearTimer = 0;
-    clearBtn.textContent = '랭킹 지우기';
-    try { localStorage.removeItem(RANK_KEY); } catch (e) { /* 무시 */ }
+    clearTimeout(wipeTimer);
+    wipeTimer = 0;
+    saves++;
+    if (shared) {
+      try {
+        const res = await fetch(API, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: $('admin-pass').value, name }),
+        });
+        const data = await res.json();
+        if (!res.ok) { adminMsg.textContent = data.error || '지우지 못했어요.'; return; }
+        shared = data.entries;
+      } catch (e) {
+        adminMsg.textContent = '인터넷 연결을 확인해 주세요.';
+        return;
+      }
+    } else {
+      saveLocal(name ? loadLocal().filter((x) => x.name !== name) : []);
+    }
+    adminMsg.textContent = name ? `'${name}' 기록을 지웠어요.` : '모든 기록을 지웠어요.';
+    $('admin-name').value = '';
     renderRanking();
-    renderNameChips();
   });
 
   // ---------- 첫 화면 명예의 전당: 전체 1위와 학년별 1위 ----------

@@ -302,3 +302,7 @@ kbd { background: var(--card); border: 1px solid var(--line); border-bottom-widt
   .rank-table th:nth-child(6), .rank-table td:nth-child(6) { display: none; }
 }
 #restart { margin: 16px auto 28px; }
+.admin { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; max-width: 560px; margin: 0 auto; padding: 16px; }
+.admin input { font: inherit; padding: 9px 12px; border: 2px solid var(--line); border-radius: 12px; flex: 1 1 160px; min-width: 0; }
+.admin .btn { font-size: 1rem; padding: 9px 16px; }
+.admin .hint { flex-basis: 100%; margin: 0; }
