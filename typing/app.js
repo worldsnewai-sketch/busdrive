@@ -1,13 +1,11 @@
 (() => {
   const SENTENCES_PER_ROUND = 10;
-  const RANK_KEY = 'ssuk-typing-ranking-v1';
+  const RANK_KEY = 'ssuk-typing-ranking-v2'; // v1은 타수 기준 기록
   const NAME_KEY = 'ssuk-typing-name';
   const RANK_LIMIT = 200; // 저장해 둘 최대 기록 수
-  // 학년별 목표 점수(별 3개 기준). 점수 = 평균 타수 × 정확도
-  const GRADE_GOAL = { 1: 40, 2: 60, 3: 90, 4: 120, 5: 150, 6: 180 };
-  // 자소 단위 타수에 곱하는 보정값. 짧고 쉬운 문장이라 한컴타자연습보다 높게 나오는 것을 맞춤
-  const SPEED_SCALE = 0.6;
-  const perMinute = (strokes, secs) => Math.round((strokes / secs) * 60 * SPEED_SCALE);
+  // 학년별 목표 점수(별 3개 기준). 점수 = 1분에 친 글자 수 × 정확도
+  const GRADE_GOAL = { 1: 20, 2: 30, 3: 40, 4: 55, 5: 70, 6: 80 };
+  const perMinute = (letters, secs) => Math.round((letters / secs) * 60);
 
   const $ = (id) => document.getElementById(id);
   const topics = window.TOPICS;
@@ -25,26 +23,9 @@
     lastEntryId: null,
   };
 
-  // ---------- 한글 타수 계산 ----------
-  // 한 글자를 치는 데 필요한 키 수. 겹모음(ㅘ 등)과 겹받침(ㄳ 등)은 2타
-  const DOUBLE_VOWELS = new Set([9, 10, 11, 14, 15, 16, 19]);
-  const DOUBLE_FINALS = new Set([3, 5, 6, 9, 10, 11, 12, 13, 14, 15, 18]);
-  function keystrokes(text) {
-    let n = 0;
-    for (const ch of text) {
-      const code = ch.charCodeAt(0) - 0xac00;
-      if (code >= 0 && code < 11172) {
-        const jung = Math.floor((code % 588) / 28);
-        const jong = code % 28;
-        n += 1; // 초성
-        n += DOUBLE_VOWELS.has(jung) ? 2 : 1;
-        if (jong) n += DOUBLE_FINALS.has(jong) ? 2 : 1;
-      } else {
-        n += 1;
-      }
-    }
-    return n;
-  }
+  // ---------- 글자 수 계산 ----------
+  // 띄어쓰기는 글자로 세지 않음 (문장부호는 셈)
+  const letterCount = (text) => [...text].filter((ch) => ch.trim()).length;
 
   // 글자 단위 편집 거리 (빠뜨리거나 더 쓴 글자도 한 글자 실수로 셈)
   function editDistance(a, b) {
@@ -65,10 +46,10 @@
     return Math.max(0, len - editDistance(target, typed));
   }
 
-  // 맞게 친 타수(정타수): 문장의 타수에서 틀린 글자 비율만큼 뺌
-  function correctStrokes(target, typed) {
+  // 맞게 친 글자 수: 문장의 글자 수에서 틀린 글자 비율만큼 뺌
+  function correctLetters(target, typed) {
     const len = [...target].length;
-    return len ? keystrokes(target) * (correctChars(target, typed) / len) : 0;
+    return len ? letterCount(target) * (correctChars(target, typed) / len) : 0;
   }
 
   function shuffle(list) {
@@ -188,7 +169,7 @@
     const secs = state.startedAt ? (performance.now() - state.startedAt) / 1000 : 0;
     const target = state.sentences[state.index];
     const head = [...target].slice(0, [...typed].length).join('');
-    const speed = secs > 1 && typed ? perMinute(correctStrokes(head, typed), secs) : 0;
+    const speed = secs > 1 && typed ? perMinute(correctLetters(head, typed), secs) : 0;
     const acc = typed ? Math.round((correctChars(head, typed) / Math.max(1, [...head].length)) * 100) : 100;
     $('live-speed').textContent = speed;
     $('live-acc').textContent = `${acc}%`;
@@ -218,15 +199,15 @@
     if (!typed) return;
     const target = state.sentences[state.index];
     const secs = Math.max(0.5, (performance.now() - (state.startedAt || performance.now())) / 1000);
-    const strokes = correctStrokes(target, typed);
+    const letters = correctLetters(target, typed);
     state.results.push({
       target,
       typed,
       secs,
-      strokes,
+      letters,
       correct: correctChars(target, typed),
       length: [...target].length,
-      speed: perMinute(strokes, secs),
+      speed: perMinute(letters, secs),
     });
     state.index++;
     if (state.index >= state.sentences.length) finishRound();
@@ -242,9 +223,9 @@
     $('progress-bar').style.width = '100%';
     const r = state.results;
     const totalSecs = r.reduce((s, x) => s + x.secs, 0);
-    const totalStrokes = r.reduce((s, x) => s + x.strokes, 0);
+    const totalLetters = r.reduce((s, x) => s + x.letters, 0);
     const accuracy = r.reduce((s, x) => s + x.correct, 0) / r.reduce((s, x) => s + x.length, 0);
-    const speed = perMinute(totalStrokes, totalSecs);
+    const speed = perMinute(totalLetters, totalSecs);
     const best = Math.max(...r.map((x) => x.speed));
     const score = Math.round(speed * accuracy);
     const accPct = Math.round(accuracy * 100);
@@ -269,9 +250,9 @@
     $('result-title').textContent = ['', '잘했어요! 👍', '아주 잘했어요! 🎉', '최고예요! 🏅'][stars];
     $('result-stars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
     $('res-score').textContent = score;
-    $('res-speed').textContent = `${speed}타`;
+    $('res-speed').textContent = `${speed}자`;
     $('res-acc').textContent = `${accPct}%`;
-    $('res-best').textContent = `${best}타`;
+    $('res-best').textContent = `${best}자`;
     $('res-time').textContent = formatTime(totalSecs);
     $('res-rank').textContent = `${state.grade}학년 · ${state.topic.name} 랭킹 ${rank}등!`;
     $('res-tip').textContent = tipFor(accPct, score, goal);
@@ -290,7 +271,7 @@
       y.textContent = x.typed;
       const m = document.createElement('div');
       m.className = 'r-meta';
-      m.textContent = `${x.secs.toFixed(1)}초 · ${x.speed}타 · 정확도 ${pct}%`;
+      m.textContent = `${x.secs.toFixed(1)}초 · 1분에 ${x.speed}자 · 정확도 ${pct}%`;
       li.append(t, y, m);
       list.appendChild(li);
     });
@@ -358,7 +339,7 @@
       if (x.id === state.lastEntryId) tr.className = 'me';
       const topic = topicById(x.topic);
       const medal = ['🥇', '🥈', '🥉'][i] || String(i + 1);
-      [medal, x.name, `${x.grade}학년`, topic ? `${topic.icon} ${topic.name}` : '-', x.score, `${x.speed}타`, `${x.accuracy}%`]
+      [medal, x.name, `${x.grade}학년`, topic ? `${topic.icon} ${topic.name}` : '-', x.score, `${x.speed}자`, `${x.accuracy}%`]
         .forEach((v) => {
           const td = document.createElement('td');
           td.textContent = v;
