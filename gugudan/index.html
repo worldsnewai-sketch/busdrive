@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>구구단 몬스터</title>
+  <meta name="description" content="알을 눌러 몬스터를 키우고, 구구단 보스를 물리쳐 도감을 채우는 초등학생 게임. 우리 반, 우리 학교, 전국 랭킹.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+  <header class="topbar">
+    <button class="logo" id="go-home" type="button">구구단 <b>몬스터</b></button>
+    <nav class="nav">
+      <button class="pill" id="go-dex" type="button">📖 도감</button>
+      <button class="pill" id="go-rank" type="button">🏆 랭킹</button>
+      <button class="pill icon" id="sound" type="button" aria-label="소리 끄기">🔊</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- 1. 처음 등록 -->
+    <section class="screen card" id="screen-join" hidden>
+      <h1>우리 학교를 골라 주세요</h1>
+      <p class="sub">기록은 별명으로 랭킹에 올라가요. <b>진짜 이름은 쓰지 마세요.</b></p>
+      <div class="grid2">
+        <label>시·도<select id="sido"></select></label>
+        <label>시·군·구<select id="gu" disabled></select></label>
+      </div>
+      <label>학교 이름 찾기<input id="school-q" placeholder="예: 새싹" autocomplete="off" disabled></label>
+      <select id="school" size="6" class="school-list" disabled aria-label="학교"></select>
+      <div class="grid3">
+        <label>학년<select id="grade"></select></label>
+        <label>반<select id="cls"></select></label>
+        <label>별명<input id="nick" maxlength="8" placeholder="예: 번개토끼" autocomplete="off"></label>
+      </div>
+      <p class="msg" id="join-msg" role="status"></p>
+      <button class="big" id="join" type="button">시작하기</button>
+      <p class="tiny">학교 목록: 학교알리미 2026년 초등학교 기본정보 (폐교 제외 6,327곳)</p>
+    </section>
+
+    <!-- 2. 키우기 -->
+    <section class="screen" id="screen-home" hidden>
+      <div class="me" id="me"></div>
+      <div class="pet-box">
+        <div class="stage-name" id="stage-name">알</div>
+        <button class="pet" id="pet" type="button" aria-label="몬스터 누르기"></button>
+        <div class="food"><b id="food">0</b> 먹이 <small id="power">한 번에 +1</small></div>
+        <div class="bar grow"><div id="grow-bar"></div></div>
+        <p class="hint" id="grow-text">다음 모습까지 50</p>
+      </div>
+      <div class="card energy">
+        <div class="energy-top">
+          <span>⚡ 보스 도전 에너지</span>
+          <span class="charges" id="charges"></span>
+        </div>
+        <div class="bar"><div id="energy-bar"></div></div>
+        <button class="big" id="go-boss" type="button">보스와 구구단 대결!</button>
+      </div>
+    </section>
+
+    <!-- 3. 보스 고르기 -->
+    <section class="screen" id="screen-select" hidden>
+      <h2 class="title">어느 보스와 싸울까요?</h2>
+      <p class="sub center">이기면 그 단의 몬스터를 잡아요. 잡은 몬스터가 많을수록 한 번에 먹이를 더 많이 줘요.</p>
+      <div class="boss-grid" id="boss-grid"></div>
+      <button class="ghost" id="select-back" type="button">돌아가기</button>
+    </section>
+
+    <!-- 4. 대결 -->
+    <section class="screen battle" id="screen-battle" hidden>
+      <div class="battle-top">
+        <div class="hearts" id="hearts"></div>
+        <div class="clock" id="clock">30</div>
+      </div>
+      <div class="boss-area">
+        <div class="boss-name" id="boss-name"></div>
+        <div class="boss" id="boss"></div>
+        <div class="bar hp"><div id="hp-bar"></div></div>
+      </div>
+      <div class="question" id="question"></div>
+      <div class="answers" id="answers"></div>
+    </section>
+
+    <!-- 5. 결과 -->
+    <section class="screen card result" id="screen-result" hidden>
+      <h2 class="title" id="res-title"></h2>
+      <div class="res-monster" id="res-monster"></div>
+      <p class="center" id="res-text"></p>
+      <div class="stars" id="res-stars"></div>
+      <div class="res-stats">
+        <div><b id="res-score">0</b><span>이번 점수</span></div>
+        <div><b id="res-total">0</b><span>내 몬스터 점수</span></div>
+      </div>
+      <p class="msg center" id="res-save" role="status"></p>
+      <div class="grid2">
+        <button class="big" id="res-again" type="button">다시 도전</button>
+        <button class="ghost" id="res-home" type="button">몬스터 키우기</button>
+      </div>
+    </section>
+
+    <!-- 6. 도감 -->
+    <section class="screen" id="screen-dex" hidden>
+      <h2 class="title">몬스터 도감</h2>
+      <p class="sub center" id="dex-sub"></p>
+      <div class="dex" id="dex"></div>
+    </section>
+
+    <!-- 7. 랭킹 -->
+    <section class="screen card" id="screen-rank" hidden>
+      <h2 class="title">랭킹</h2>
+      <div class="tabs" id="rank-tabs" role="tablist">
+        <button data-view="class" role="tab">우리 반</button>
+        <button data-view="school" role="tab">우리 학교</button>
+        <button data-view="region" role="tab">우리 지역</button>
+        <button data-view="all" role="tab">전국</button>
+        <button data-view="schools" role="tab">학교 대결</button>
+      </div>
+      <p class="sub" id="rank-desc"></p>
+      <ol class="board" id="board"></ol>
+      <button class="ghost" id="invite" type="button">🔗 우리 반 친구 초대 링크 복사</button>
+      <p class="tiny center" id="invite-msg" role="status"></p>
+    </section>
+  </main>
+
+  <script src="app.js?v=1"></script>
+</body>
+</html>
