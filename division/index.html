@@ -1,0 +1,1117 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>수 모형 나눗셈 교실</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+/* Layout: 수 모형 무대(왼쪽) + 모눈 공책 세로셈(오른쪽) + 설명 말풍선. 색은 자리마다 하나: 백=파랑, 십=초록, 일=주황 */
+:root {
+  --paper: #eef3f9;
+  --card: #ffffff;
+  --grid: #dbe5f1;
+  --edge: #cfdae8;
+  --ink: #1b2740;
+  --soft: #58668a;
+  --h: #2d6bd9;
+  --h-soft: #e0eafc;
+  --t: #1c9152;
+  --t-soft: #daf1e3;
+  --o: #e5730c;
+  --o-soft: #fde8d3;
+  --mark: #fff0a0;
+  --good: #188a49;
+  --good-soft: #dcf3e5;
+  --bad: #cf3b3b;
+  --bad-soft: #fde3e3;
+  --btn: #1b2740;
+  --btn-ink: #ffffff;
+  --shadow: 0 1px 0 rgba(27, 39, 64, .06), 0 6px 18px -10px rgba(27, 39, 64, .25);
+  --f-disp: "Jua", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  --f-body: "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #121a27; --card: #1a2435; --grid: #223047; --edge: #2c3a52; --ink: #e7edf8; --soft: #9babc6;
+    --h: #6f9dff; --h-soft: #1f3460; --t: #48c682; --t-soft: #16402b; --o: #ffa04a; --o-soft: #4a2f14;
+    --mark: #5c4f12; --good: #4fd08a; --good-soft: #163d29; --bad: #ff7272; --bad-soft: #4a1d22;
+    --btn: #e7edf8; --btn-ink: #121a27; --shadow: 0 6px 18px -10px rgba(0, 0, 0, .7);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #121a27; --card: #1a2435; --grid: #223047; --edge: #2c3a52; --ink: #e7edf8; --soft: #9babc6;
+  --h: #6f9dff; --h-soft: #1f3460; --t: #48c682; --t-soft: #16402b; --o: #ffa04a; --o-soft: #4a2f14;
+  --mark: #5c4f12; --good: #4fd08a; --good-soft: #163d29; --bad: #ff7272; --bad-soft: #4a1d22;
+  --btn: #e7edf8; --btn-ink: #121a27; --shadow: 0 6px 18px -10px rgba(0, 0, 0, .7);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 17px;
+  line-height: 1.6;
+}
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--h); outline-offset: 2px; border-radius: 6px; }
+h1, h2, h3 { font-family: var(--f-disp); font-weight: 400; line-height: 1.25; text-wrap: balance; margin: 0; }
+
+.wrap {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* ---------- 머리 ---------- */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--card); }
+.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: var(--card);
+  border-bottom: 1px solid var(--edge);
+}
+.top .wrap { display: flex; align-items: center; gap: 16px 24px; flex-wrap: wrap; padding-block: 10px; }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--f-disp); font-size: 1.35rem; white-space: nowrap; }
+.brand-mark { display: flex; align-items: flex-end; gap: 3px; }
+.brand-mark i { display: block; border-radius: 2px; }
+.brand-mark .m1 { width: 22px; height: 22px; background: var(--h); }
+.brand-mark .m2 { width: 6px; height: 22px; background: var(--t); }
+.brand-mark .m3 { width: 6px; height: 6px; background: var(--o); }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+.tab {
+  border: 2px solid var(--edge); background: transparent; border-radius: 999px;
+  padding: 6px 16px; font-family: var(--f-disp); font-size: 1.05rem; color: var(--soft);
+}
+.tab[aria-selected="true"] { background: var(--btn); border-color: var(--btn); color: var(--btn-ink); }
+
+main { padding-block: 22px 60px; }
+.view { display: grid; gap: 22px; }
+
+/* ---------- 배우기 머리 ---------- */
+.learn-head { display: flex; gap: 14px 28px; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; }
+.learn-head h1 { font-size: clamp(1.7rem, 3.2vw, 2.4rem); }
+.learn-head p { margin: 4px 0 0; color: var(--soft); max-width: 46ch; }
+.picker { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.picker-label { font-size: .9rem; color: var(--soft); letter-spacing: .04em; margin-right: 2px; }
+.chip {
+  border: 2px solid var(--edge); background: var(--card); border-radius: 10px;
+  padding: 4px 12px; font-family: var(--f-disp); font-size: 1.05rem; font-variant-numeric: tabular-nums;
+}
+.chip[aria-pressed="true"] { border-color: var(--h); background: var(--h-soft); }
+.chip small { font-family: var(--f-body); font-size: .75rem; color: var(--soft); margin-left: 4px; }
+.custom { display: flex; align-items: center; gap: 6px; padding-left: 6px; border-left: 2px solid var(--edge); }
+.custom input {
+  width: 4.2ch; text-align: center; border: 2px solid var(--edge); border-radius: 10px; background: var(--card);
+  padding: 4px 4px; font-family: var(--f-disp); font-size: 1.1rem;
+}
+.custom input#cd { width: 3ch; }
+.custom-err { width: 100%; color: var(--bad); font-size: .9rem; margin: 0; }
+
+/* ---------- 탐험기 ---------- */
+.ex {
+  background: var(--card); border: 1px solid var(--edge); border-radius: 18px; box-shadow: var(--shadow);
+  display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  grid-template-areas: "head head" "stage paper" "stage say";
+  grid-template-rows: auto auto 1fr;
+  overflow: hidden;
+}
+.ex-head { grid-area: head; display: flex; gap: 8px 18px; align-items: baseline; flex-wrap: wrap; padding: 16px 20px 12px; border-bottom: 1px solid var(--edge); }
+.ex-expr { font-family: var(--f-disp); font-size: 1.9rem; font-variant-numeric: tabular-nums; }
+.ex-story { color: var(--soft); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; margin-left: auto; font-size: .9rem; color: var(--soft); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend .blk { --c: 4px; }
+
+.stage { grid-area: stage; padding: 16px 20px 20px; border-right: 1px solid var(--edge); display: grid; gap: 16px; align-content: start; min-width: 0; }
+.zone-label { font-size: .82rem; letter-spacing: .06em; color: var(--soft); margin-bottom: 6px; }
+.store { display: grid; gap: 10px; }
+.srow { display: grid; grid-template-columns: 7.2em minmax(0, 1fr); gap: 10px; align-items: center; min-height: 34px; }
+.slabel { font-family: var(--f-disp); font-size: 1rem; line-height: 1.2; }
+.slabel b { font-size: 1.35rem; font-weight: 400; font-variant-numeric: tabular-nums; }
+.srow[data-p="0"] .slabel { color: var(--h); }
+.srow[data-p="1"] .slabel { color: var(--t); }
+.srow[data-p="2"] .slabel { color: var(--o); }
+.srow.empty .slabel { opacity: .45; }
+.sblocks { display: flex; flex-wrap: wrap; gap: 4px; align-items: flex-end; min-width: 0; --c: 7px; }
+.srow.empty .sblocks::before { content: "없음"; color: var(--soft); font-size: .85rem; opacity: .7; }
+
+.people { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+.pbox {
+  border: 2px dashed var(--edge); border-radius: 14px; padding: 8px 8px 10px; display: grid; gap: 6px; align-content: start;
+  background: var(--paper);
+}
+.pname { display: flex; align-items: center; gap: 6px; font-size: .85rem; color: var(--soft); }
+.face {
+  width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--card); border: 2px solid var(--edge); font-family: var(--f-disp); font-size: .95rem; color: var(--ink);
+}
+.pblocks { display: grid; gap: 4px; --c: 4px; min-height: 52px; align-content: end; }
+.pp { display: flex; flex-wrap: wrap; gap: 2px; align-items: flex-end; }
+.pp:empty { display: none; }
+.pval { font-family: var(--f-disp); font-size: 1.5rem; line-height: 1; text-align: center; padding-top: 4px; border-top: 1px solid var(--edge); font-variant-numeric: tabular-nums; }
+
+/* 수 모형 블록: --c 는 일 모형 한 칸 크기 */
+.blk { display: block; flex: none; border-radius: 1.5px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .2); }
+.b-h {
+  width: calc(var(--c) * 10); height: calc(var(--c) * 10); background-color: var(--h);
+  background-image: linear-gradient(90deg, rgba(255, 255, 255, .42) 1px, transparent 1px), linear-gradient(rgba(255, 255, 255, .42) 1px, transparent 1px);
+  background-size: var(--c) var(--c);
+}
+.b-t {
+  width: var(--c); height: calc(var(--c) * 10); background-color: var(--t);
+  background-image: linear-gradient(rgba(255, 255, 255, .45) 1px, transparent 1px);
+  background-size: 100% var(--c);
+}
+.b-o { width: var(--c); height: var(--c); background-color: var(--o); }
+.ghost { position: fixed; pointer-events: none; z-index: 40; margin: 0; }
+
+/* 모눈 공책 */
+.paper {
+  grid-area: paper; padding: 16px 20px; min-width: 0; overflow-x: auto;
+  background-color: var(--card);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 22px 22px;
+  border-bottom: 1px solid var(--edge);
+}
+.ld {
+  --cw: 2.5rem; --ch: 2.9rem;
+  display: grid; grid-template-columns: var(--cw) 0.9rem repeat(3, var(--cw)); grid-auto-rows: var(--ch);
+  width: max-content; margin: 0 auto; font-family: var(--f-disp); font-size: 2.1rem; line-height: 1;
+  font-variant-numeric: tabular-nums; position: relative;
+}
+.ld-c { display: grid; place-items: center; position: relative; z-index: 1; border-radius: 8px; transition: background-color .25s; }
+.u-h { color: var(--h); }
+.u-t { color: var(--t); }
+.u-o { color: var(--o); }
+.ld-c.hl { background: var(--mark); }
+.ld-c.pop { animation: pop .45s cubic-bezier(.3, 1.6, .5, 1) both; }
+@keyframes pop { from { transform: scale(.2); opacity: 0; } to { transform: none; opacity: 1; } }
+.ld-paren { position: relative; z-index: 1; }
+.ld-paren svg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; }
+.ld-paren path { fill: none; stroke: var(--ink); stroke-width: 2.6; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.ld-bar { border-top: 3px solid var(--ink); margin-left: 4px; }
+.ld-ul { border-bottom: 3px solid var(--ink); align-self: end; margin-bottom: -2px; }
+.ld-blank { border: 2.5px dashed var(--soft); border-radius: 8px; margin: 5px; display: grid; place-items: center; font-family: var(--f-body); font-size: .62rem; color: var(--soft); }
+.ld-arrow { justify-self: center; position: relative; width: 0; border-left: 2.5px dashed var(--soft); margin-block: 2px 0; }
+.ld-arrow::after {
+  content: ""; position: absolute; left: -8px; bottom: -6px; width: 0; height: 0;
+  border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 9px solid var(--soft);
+}
+.ld-eq {
+  margin-top: 14px; text-align: center; font-family: var(--f-disp); font-size: 1.4rem; font-variant-numeric: tabular-nums;
+  min-height: 1.8em;
+}
+.ld-eq span { background: var(--mark); padding: 2px 10px; border-radius: 8px; }
+
+/* 설명 */
+.say { grid-area: say; padding: 16px 20px 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.say-meta { font-size: .82rem; letter-spacing: .06em; color: var(--soft); }
+.say h3 { font-size: 1.45rem; }
+.say p { margin: 0; font-size: 1.12rem; }
+.say b { font-weight: 400; font-family: var(--f-disp); font-size: 1.15em; }
+.say strong { font-weight: 700; }
+.n-h { color: var(--h); } .n-t { color: var(--t); } .n-o { color: var(--o); } .n-x { color: var(--ink); }
+.tip { background: var(--paper); border-radius: 12px; padding: 10px 12px; font-size: 1rem; }
+.tip:empty { display: none; }
+.why { display: grid; grid-template-columns: auto auto; gap: 2px 10px; margin-top: 6px; font-variant-numeric: tabular-nums; width: max-content; max-width: 100%; }
+.why .ok { color: var(--good); }
+.why .no { color: var(--bad); }
+.nav { display: flex; align-items: center; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
+.btn {
+  border: 2px solid var(--btn); background: var(--btn); color: var(--btn-ink); border-radius: 12px;
+  padding: 8px 18px; font-family: var(--f-disp); font-size: 1.15rem; line-height: 1.2;
+}
+.btn.ghostly { background: transparent; color: var(--ink); border-color: var(--edge); }
+.btn:disabled { opacity: .35; cursor: default; }
+.dots { display: flex; gap: 5px; flex-wrap: wrap; flex: 1; justify-content: center; min-width: 0; }
+.dot { width: 11px; height: 11px; border-radius: 50%; border: 0; padding: 0; background: var(--edge); }
+.dot.done { background: var(--soft); }
+.dot.cur { background: var(--h); transform: scale(1.3); }
+
+/* ---------- 꼭 기억해요 ---------- */
+.ideas h2, .pr-head h2 { font-size: 1.6rem; }
+.idea-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-top: 12px; }
+.idea { background: var(--card); border: 1px solid var(--edge); border-radius: 16px; padding: 16px 18px; display: grid; gap: 6px; align-content: start; }
+.idea h3 { font-size: 1.2rem; }
+.idea p { margin: 0; color: var(--soft); }
+.idea .fx { font-family: var(--f-disp); font-size: 1.15rem; color: var(--ink); }
+
+details.teacher { background: var(--card); border: 1px solid var(--edge); border-radius: 16px; padding: 14px 18px; }
+details.teacher summary { font-family: var(--f-disp); font-size: 1.15rem; cursor: pointer; }
+.teacher-body { display: grid; gap: 10px; margin-top: 10px; max-width: 75ch; }
+.teacher-body p, .teacher-body ul { margin: 0; }
+.teacher-body ul { padding-left: 1.2em; display: grid; gap: 4px; }
+.teacher-body a { color: var(--h); }
+.sources { font-size: .9rem; color: var(--soft); }
+
+/* ---------- 연습 ---------- */
+.pr-head { display: flex; gap: 12px 24px; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; }
+.pr-head p { margin: 4px 0 0; color: var(--soft); max-width: 52ch; }
+.seg { display: inline-flex; border: 2px solid var(--edge); border-radius: 12px; padding: 3px; background: var(--card); }
+.seg button { border: 0; background: transparent; border-radius: 9px; padding: 6px 14px; font-family: var(--f-disp); font-size: 1rem; color: var(--soft); }
+.seg button[aria-pressed="true"] { background: var(--btn); color: var(--btn-ink); }
+.progress { list-style: none; margin: 0; padding: 0; display: flex; gap: 8px; flex-wrap: wrap; }
+.pdot {
+  width: 40px; height: 40px; border-radius: 12px; border: 2px solid var(--edge); background: var(--card);
+  font-family: var(--f-disp); font-size: 1.05rem; display: grid; place-items: center; color: var(--soft);
+}
+.pdot.cur { border-color: var(--h); color: var(--ink); box-shadow: 0 0 0 3px var(--h-soft); }
+.pdot.star { background: var(--good-soft); border-color: var(--good); color: var(--good); }
+.pdot.ok { background: var(--h-soft); border-color: var(--h); color: var(--h); }
+.pr-card {
+  background: var(--card); border: 1px solid var(--edge); border-radius: 18px; box-shadow: var(--shadow);
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); overflow: hidden;
+}
+.pr-left { padding: 20px 22px; display: grid; gap: 14px; align-content: start; border-right: 1px solid var(--edge); min-width: 0; }
+.pr-num { font-size: .85rem; letter-spacing: .06em; color: var(--soft); }
+.pr-expr { font-family: var(--f-disp); font-size: clamp(2.4rem, 6vw, 3.4rem); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.pr-story { margin: 0; color: var(--soft); }
+.pr-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.feedback { border-radius: 12px; padding: 12px 14px; font-size: 1.05rem; background: var(--paper); }
+.feedback:empty { display: none; }
+.feedback.good { background: var(--good-soft); }
+.feedback.bad { background: var(--bad-soft); }
+.feedback strong { font-family: var(--f-disp); font-weight: 400; font-size: 1.2em; }
+.feedback .check { display: block; margin-top: 4px; font-family: var(--f-disp); font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.pr-work { min-width: 0; overflow-x: auto; padding: 22px 18px; display: grid; place-items: center;
+  background-color: var(--card);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+.ld-in {
+  width: calc(100% - 6px); height: calc(100% - 6px); margin: 3px; padding: 0; text-align: center;
+  border: 2px solid var(--edge); border-radius: 9px; background: var(--card);
+  font-family: var(--f-disp); font-size: 1.9rem; line-height: 1; caret-color: var(--h);
+  position: relative; z-index: 1;
+}
+.ld-in:focus { border-color: var(--h); outline: none; box-shadow: 0 0 0 3px var(--h-soft); }
+.ld-in.good { border-color: var(--good); background: var(--good-soft); }
+.ld-in.bad { border-color: var(--bad); background: var(--bad-soft); }
+.ld-in.empty { border-style: dashed; border-color: var(--bad); }
+.ld-in:disabled { opacity: 1; }
+.quick { display: grid; gap: 14px; justify-items: center; font-family: var(--f-disp); font-size: 2.1rem; font-variant-numeric: tabular-nums; }
+.quick-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.quick input {
+  width: 3.4ch; text-align: center; border: 2px solid var(--edge); border-radius: 12px; background: var(--card);
+  font-family: var(--f-disp); font-size: 2.1rem; padding: 2px 4px;
+}
+.quick input#qr { width: 2.2ch; }
+.quick input:focus { border-color: var(--h); outline: none; box-shadow: 0 0 0 3px var(--h-soft); }
+.quick input.good { border-color: var(--good); background: var(--good-soft); }
+.quick input.bad { border-color: var(--bad); background: var(--bad-soft); }
+.quick-labels { display: flex; gap: 26px; font-family: var(--f-body); font-size: .9rem; color: var(--soft); }
+.done-card { background: var(--card); border: 2px solid var(--good); border-radius: 18px; padding: 20px 22px; display: grid; gap: 10px; justify-items: start; }
+.done-card h3 { font-size: 1.6rem; }
+.done-card p { margin: 0; }
+
+/* ---------- 힌트 창 ---------- */
+dialog {
+  width: min(1180px, calc(100vw - 20px)); max-height: calc(100dvh - 20px); padding: 0; border: 0; border-radius: 18px;
+  background: var(--paper); color: var(--ink); box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .5);
+}
+dialog::backdrop { background: rgba(10, 16, 30, .55); }
+.dlg-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; }
+.dlg-head h2 { font-size: 1.3rem; }
+.dlg-body { padding: 0 12px 12px; }
+
+@media (max-width: 860px) {
+  .ex { grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "say" "paper" "stage"; grid-template-rows: auto; }
+  .stage { border-right: 0; }
+  .paper { border-top: 1px solid var(--edge); }
+  .pr-card { grid-template-columns: minmax(0, 1fr); }
+  .pr-left { border-right: 0; border-bottom: 1px solid var(--edge); }
+  .legend { margin-left: 0; }
+}
+@media (max-width: 520px) {
+  body { font-size: 16px; }
+  .sblocks { --c: 5px; gap: 3px; }
+  .srow { grid-template-columns: 5.6em minmax(0, 1fr); }
+  .people { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); }
+  .ld { --cw: 2.2rem; --ch: 2.6rem; font-size: 1.8rem; }
+  .ld-in { font-size: 1.6rem; }
+  .tabs { margin-left: 0; }
+  .tab { padding: 5px 12px; font-size: .98rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ld-c.pop { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"><i class="m1"></i><i class="m2"></i><i class="m3"></i></span>수 모형 나눗셈 교실</div>
+    <nav class="tabs" role="tablist" aria-label="메뉴">
+      <button class="tab" role="tab" id="tab-learn" data-view="learn" aria-selected="true">배우기</button>
+      <button class="tab" role="tab" id="tab-no-remainder" data-view="no-remainder" aria-selected="false">연습 ① 나머지 없음</button>
+      <button class="tab" role="tab" id="tab-remainder" data-view="remainder" aria-selected="false">연습 ② 나머지 있음</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="view" id="v-learn" aria-labelledby="tab-learn">
+    <div class="learn-head">
+      <div>
+        <h1>(세 자리 수) ÷ (한 자리 수)</h1>
+        <p>수 모형을 친구들에게 똑같이 나누어 주면서, 세로셈의 숫자 하나하나가 무엇을 뜻하는지 알아봐요.</p>
+      </div>
+      <div class="picker" role="group" aria-label="예시 문제 고르기">
+        <span class="picker-label">예시 문제</span>
+        <button class="chip" data-n="465" data-d="5">465 ÷ 5<small>몫이 두 자리</small></button>
+        <button class="chip" data-n="852" data-d="4">852 ÷ 4<small>몫이 세 자리</small></button>
+        <button class="chip" data-n="618" data-d="6">618 ÷ 6<small>몫에 0</small></button>
+        <button class="chip" data-n="467" data-d="5">467 ÷ 5<small>나머지</small></button>
+        <form class="custom" id="custom" novalidate>
+          <input id="cn" inputmode="numeric" maxlength="3" aria-label="나누어지는 수 (세 자리)" placeholder="384">
+          <span aria-hidden="true">÷</span>
+          <input id="cd" inputmode="numeric" maxlength="1" aria-label="나누는 수 (한 자리)" placeholder="3">
+          <button class="chip" type="submit">보기</button>
+        </form>
+        <p class="custom-err" id="customErr" hidden></p>
+      </div>
+    </div>
+
+    <div id="learnEx"></div>
+
+    <section class="ideas" aria-labelledby="ideas-h">
+      <h2 id="ideas-h">꼭 기억해요</h2>
+      <div class="idea-grid">
+        <div class="idea"><h3>큰 자리부터 나누어요</h3><p>백 모형 → 십 모형 → 일 모형 순서로 나누어 줘요. 세로셈도 왼쪽부터 계산해요.</p></div>
+        <div class="idea"><h3>못 나누면 바꿔요</h3><p class="fx">백 1개 = 십 10개 · 십 1개 = 일 10개</p><p>남은 수 모형을 아래 자리로 바꿔서 합치는 것이 세로셈의 ‘내려 쓰기’예요.</p></div>
+        <div class="idea"><h3>몫의 자리를 잘 봐요</h3><p>백 모형을 나눌 수 없으면 몫의 백의 자리는 비워요. 중간 자리를 나눌 수 없으면 몫에 0을 꼭 써요.</p></div>
+        <div class="idea"><h3>나머지와 확인</h3><p>나머지는 언제나 나누는 수보다 작아요.</p><p class="fx">나누는 수 × 몫 + 나머지 = 나누어지는 수</p></div>
+      </div>
+    </section>
+
+    <details class="teacher">
+      <summary>선생님께: 이 자료를 만든 생각</summary>
+      <div class="teacher-body">
+        <p>세로셈 계산은 하지만 뜻을 모르는 학생들은 대개 ‘숫자를 내려 쓴다’, ‘몫을 위에 쓴다’를 규칙으로만 외우고 있어요. 이 자료는 <strong>구체물(수 모형) → 그림 → 세로셈</strong>을 한 화면에 나란히 두고, 같은 단계에서 둘이 함께 움직이도록 만들었어요.</p>
+        <ul>
+          <li><strong>똑같이 나누기(등분제)</strong> 상황으로 보여 줘요. 친구 수 = 나누는 수, 한 명이 받은 양 = 몫, 나누어 주지 못하고 남은 양 = 나머지.</li>
+          <li>세로셈 숫자의 색은 그 숫자의 <strong>단위</strong>를 뜻해요. 465 ÷ 5에서 아래에 쓴 초록색 45는 ‘십 모형 45개(450)’예요.</li>
+          <li>학생들이 자주 막히는 곳을 단계로 따로 뗐어요. 몫의 첫 자리 위치(백의 자리를 비우는 이유), 내려 쓰기 = 바꾸어 합치기, 몫 가운데의 0, 나머지가 나누는 수보다 작아야 하는 이유.</li>
+          <li>수업에서는 ‘다음’을 누르기 전에 “이제 어떻게 될까?”를 먼저 물어보세요. 전자칠판에서는 ← → 키로도 넘길 수 있어요.</li>
+          <li>연습 문제에서 막히면 ‘수 모형 힌트’ 버튼으로 그 문제를 그대로 수 모형으로 볼 수 있어요. 힌트 없이 한 번에 맞히면 초록 칸, 다시 풀어 맞히면 파란 칸이 돼요.</li>
+        </ul>
+        <p class="sources">참고 자료: <a href="https://www.localnaeil.com/News/View/648596" target="_blank" rel="noopener">지역내일 – 나눗셈 개념과 수 모형</a> · <a href="https://insidemathematics.org/mathcuts/3-to-5-grades-mathcuts-dividing-base10-blocks" target="_blank" rel="noopener">Inside Mathematics – Dividing with base-10 blocks</a> · <a href="https://www.mathnasium.com/math-centers/northwood/news/fun-long-division-practice" target="_blank" rel="noopener">Mathnasium – 445 ÷ 4 블록 활동</a> · <a href="https://im.kendallhunt.com/MS_ACC/teachers/1/3/18/index.html" target="_blank" rel="noopener">Illustrative Mathematics – 자릿값과 나눗셈 알고리즘</a></p>
+      </div>
+    </details>
+  </section>
+
+  <section class="view" id="v-practice" hidden>
+    <div class="pr-head">
+      <div>
+        <h2 id="prTitle">연습 ① 나머지가 없는 나눗셈</h2>
+        <p id="prSub"></p>
+      </div>
+      <div class="seg" role="group" aria-label="푸는 방법">
+        <button id="modeGrid" data-mode="grid" aria-pressed="true">세로셈 칸 채우기</button>
+        <button id="modeQuick" data-mode="quick" aria-pressed="false">답만 쓰기</button>
+      </div>
+    </div>
+    <ol class="progress" id="prProgress" aria-label="문제 목록"></ol>
+    <div class="pr-card">
+      <div class="pr-left">
+        <div class="pr-num" id="prNum"></div>
+        <div class="pr-expr" id="prExpr"></div>
+        <p class="pr-story" id="prStory"></p>
+        <div class="feedback" id="prFeedback" role="status" aria-live="polite"></div>
+        <div class="pr-actions">
+          <button class="btn" id="prCheck">확인하기</button>
+          <button class="btn ghostly" id="prHint">수 모형 힌트</button>
+          <button class="btn ghostly" id="prClear">지우기</button>
+          <button class="btn" id="prNext" hidden>다음 문제 →</button>
+        </div>
+      </div>
+      <div class="pr-work" id="prWork"></div>
+    </div>
+    <div class="done-card" id="prDone" hidden></div>
+  </section>
+</main>
+
+<dialog id="hintDlg" aria-labelledby="hintTitle">
+  <div class="dlg-head">
+    <h2 id="hintTitle">수 모형으로 살펴보기</h2>
+    <button class="btn ghostly" id="hintClose">닫기</button>
+  </div>
+  <div class="dlg-body"><div id="hintEx"></div></div>
+</dialog>
+
+<script>
+(function () {
+  'use strict';
+  var PL = ['백', '십', '일'];
+  var PC = ['h', 't', 'o'];
+  var PV = [100, 10, 1];
+  var reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- 한국어 조사 ----------
+  function hasB(n) { n = Math.abs(n); var l = n % 10; return l === 0 ? true : [1, 3, 6, 7, 8].indexOf(l) >= 0; }
+  function J(n, a, b) { return n + (hasB(n) ? a : b); }
+  function b(x, p) { return '<b class="n-' + (p == null ? 'x' : PC[p]) + '">' + x + '</b>'; }
+  function bJ(x, p, a, c) { return b(x, p) + (hasB(x) ? a : c); }
+
+  // ---------- 나눗셈 과정 만들기 ----------
+  // 수 모형 상태와 세로셈 상태를 한 단계씩 함께 기록한다.
+  function cellsOf(row) {
+    var s = String(row.value), out = [];
+    for (var i = 0; i < s.length; i++) out.push({ col: row.col - s.length + 1 + i, ch: s[i] });
+    return out;
+  }
+
+  function simulate(n, d) {
+    var a = String(n).split('').map(Number);
+    var Q = Math.floor(n / d), R = n % d;
+    var st = { store: a.slice(), person: [0, 0, 0], q: [null, null, null], rows: [], eq: '', showVal: false };
+    var steps = [], order = [], seen = {};
+    function note(ri, kind) {
+      cellsOf(st.rows[ri]).forEach(function (c) {
+        var k = 'r' + ri + 'c' + c.col;
+        if (!seen[k]) { seen[k] = 1; order.push({ key: k, kind: kind, col: c.col }); }
+      });
+    }
+    function noteQ(p) { order.push({ key: 'q' + p, kind: 'q', col: p }); }
+    function add(s) {
+      var base = { hl: [], arrows: [], anim: null, tip: '', qblank: null };
+      for (var k in s) base[k] = s[k];
+      base.state = JSON.parse(JSON.stringify(st));
+      steps.push(base);
+    }
+
+    add({
+      kind: 'intro',
+      title: J(n, '을', '를') + ' 수 모형으로 나타내요',
+      html: '백 모형 ' + b(a[0], 0) + '개, 십 모형 ' + b(a[1], 1) + '개, 일 모형 ' + b(a[2], 2) + '개예요. 이 수 모형을 친구 ' + b(d) + '명에게 <strong>똑같이</strong> 나누어 줄 거예요.',
+      tip: '나눗셈은 가장 큰 자리인 <strong>백 모형부터</strong> 나누어 줘요.',
+      hl: [{ t: 'div', c0: 0, c1: 2 }, { t: 'dvs' }]
+    });
+
+    var started = false, cur = 0, prevRem = 0, curRow = -2, qStart = null;
+    for (var p = 0; p < 3; p++) {
+      if (p === 0) {
+        cur = a[0];
+      } else if (prevRem > 0) {
+        var cnt = prevRem;
+        cur = cnt * 10 + a[p];
+        st.store[p - 1] = 0; st.store[p] = cur;
+        var anim = { type: 'trade', from: p - 1, to: p, cnt: cnt };
+        if (!started) {
+          add({
+            kind: 'trade',
+            title: PL[p - 1] + ' 모형을 ' + PL[p] + ' 모형으로 바꿔요',
+            html: PL[p - 1] + ' 모형 1개는 ' + PL[p] + ' 모형 10개와 같아요. ' + PL[p - 1] + ' 모형 ' + b(cnt, p - 1) + '개를 ' + PL[p] + ' 모형 ' + b(cnt * 10, p) + '개로 바꾸면, 원래 있던 ' + b(a[p], p) + '개와 합쳐서 ' + PL[p] + ' 모형은 모두 ' + b(cur, p) + '개가 돼요.',
+            tip: '그래서 세로셈에서는 ' + bJ(cur, p, '을', '를') + ' 한 덩어리로 보고 나누어요. 몫은 ' + PL[p] + '의 자리부터 써요.',
+            hl: [{ t: 'div', c0: 0, c1: p }], anim: anim, qblank: 0
+          });
+        } else {
+          var hadRow = curRow >= 0;
+          if (hadRow) { st.rows[curRow].value = cur; st.rows[curRow].col = p; }
+          else { st.rows.push({ value: cur, col: p }); curRow = st.rows.length - 1; }
+          note(curRow, 'down');
+          var arrows = hadRow ? [{ col: p, ri: curRow }] : cellsOf(st.rows[curRow]).map(function (c) { return { col: c.col, ri: curRow }; });
+          add({
+            kind: 'trade',
+            title: '남은 ' + PL[p - 1] + ' 모형을 ' + PL[p] + ' 모형으로 바꿔요',
+            html: PL[p - 1] + ' 모형 1개는 ' + PL[p] + ' 모형 10개와 같아요. 남은 ' + PL[p - 1] + ' 모형 ' + b(cnt, p - 1) + '개를 ' + PL[p] + ' 모형 ' + b(cnt * 10, p) + '개로 바꾸고, 원래 있던 ' + b(a[p], p) + '개와 합치면 모두 ' + b(cur, p) + '개예요.',
+            tip: hadRow
+              ? '세로셈에서 ' + bJ(a[p], p, '을', '를') + ' <strong>내려 쓰는 것</strong>이 바로 이 과정이에요. 남은 ' + b(cnt, p - 1) + ' 옆에 ' + bJ(a[p], p, '을', '를') + ' 붙이면 ' + bJ(cur, p, '이', '가') + ' 돼요.'
+              : '세로셈에서는 ' + bJ(cnt, p - 1, '과', '와') + ' ' + bJ(a[p], p, '을', '를') + ' 함께 <strong>내려 써서</strong> ' + bJ(cur, p, '을', '를') + ' 만들어요.',
+            hl: [{ t: 'row', ri: curRow }], arrows: arrows, anim: anim
+          });
+        }
+      } else {
+        cur = a[p];
+        if (started && cur >= d) {
+          st.rows.push({ value: cur, col: p }); curRow = st.rows.length - 1; note(curRow, 'down');
+          add({
+            kind: 'down',
+            title: '이제 ' + PL[p] + ' 모형 차례예요',
+            html: '남은 ' + PL[p - 1] + ' 모형이 없으니 바꿀 것도 없어요. 이제 ' + PL[p] + ' 모형 ' + b(cur, p) + '개를 나누어 줄 차례예요.',
+            tip: '세로셈에서는 ' + bJ(a[p], p, '을', '를') + ' 아래로 <strong>내려 써요</strong>.',
+            hl: [{ t: 'row', ri: curRow }], arrows: [{ col: p, ri: curRow }]
+          });
+        }
+      }
+
+      if (cur < d) {
+        if (!started) {
+          add({
+            kind: 'cant',
+            title: '백 모형은 나누어 줄 수 없어요',
+            html: '백 모형은 ' + b(cur, 0) + '개인데 친구는 ' + b(d) + '명이에요. 한 명에게 1개씩도 줄 수 없어요 (' + cur + ' &lt; ' + d + ').',
+            tip: '그래서 <strong>몫의 백의 자리는 비워 둬요.</strong> 0을 쓰지 않아요.',
+            hl: [{ t: 'div', c0: 0, c1: 0 }, { t: 'dvs' }], qblank: 0
+          });
+          prevRem = cur;
+          continue;
+        }
+        st.q[p] = 0; noteQ(p);
+        add({
+          kind: 'zero',
+          title: PL[p] + ' 모형은 나누어 줄 수 없어요',
+          html: cur > 0
+            ? PL[p] + ' 모형 ' + b(cur, p) + '개로는 ' + b(d) + '명에게 1개씩도 줄 수 없어요 (' + cur + ' &lt; ' + d + '). 그래서 몫의 ' + PL[p] + '의 자리에 ' + b(0, p) + '을 써요.'
+            : PL[p] + ' 모형이 하나도 없어요. 나누어 줄 것이 없으니 몫의 ' + PL[p] + '의 자리에 ' + b(0, p) + '을 써요.',
+          tip: '앞에 몫을 이미 썼다면 <strong>0을 꼭 써야 해요.</strong> 0을 빠뜨리면 숫자의 자리가 밀려서 전혀 다른 수가 돼요.',
+          hl: [{ t: 'q', col: p }]
+        });
+        prevRem = cur;
+        continue;
+      }
+
+      // 나누어 주기
+      started = true;
+      if (qStart == null) qStart = p;
+      var q = Math.floor(cur / d), prod = q * d, rem = cur - prod;
+      var startCol = curRow >= 0 ? st.rows[curRow].col - String(st.rows[curRow].value).length + 1 : 0;
+      st.q[p] = q; noteQ(p);
+      st.store[p] -= prod; st.person[p] += q;
+      st.rows.push({ value: prod, col: p, ul: [startCol, p] });
+      var pr = st.rows.length - 1;
+      note(pr, 'prod');
+      var why = '<span class="why"><span>' + d + ' × ' + q + ' = ' + prod + '</span><span class="ok">' + cur + '개로 줄 수 있어요 ✓</span>' +
+        '<span>' + d + ' × ' + (q + 1) + ' = ' + (prod + d) + '</span><span class="no">' + cur + '개보다 많아요 ✗</span></span>';
+      var place = p < 2 ? ' 몫의 ' + bJ(q, p, '은', '는') + ' ' + PL[p] + ' 모형 ' + q + '개라서 실제로는 ' + J(q * PV[p], '을', '를') + ' 뜻해요.' : '';
+      add({
+        kind: 'share',
+        title: PL[p] + ' 모형 ' + cur + '개를 ' + d + '명에게 나누어 줘요',
+        html: '한 명에게 ' + b(q + '개씩', p) + ' 나누어 주면, 모두 ' + d + ' × ' + q + ' = ' + b(prod, p) + '개를 나누어 준 거예요. 세로셈에서는 몫의 ' + PL[p] + '의 자리에 ' + bJ(q, p, '을', '를') + ' 쓰고, 나누어 준 ' + bJ(prod, p, '을', '를') + ' 아래에 써요.' + place,
+        tip: '왜 ' + q + '개씩일까요?' + why,
+        hl: [{ t: 'q', col: p }, { t: 'row', ri: pr }, curRow >= 0 ? { t: 'row', ri: curRow } : { t: 'div', c0: 0, c1: p }, { t: 'dvs' }],
+        anim: { type: 'share', p: p, per: q }
+      });
+
+      // 빼기
+      if (rem > 0 || p === 2) { st.rows.push({ value: rem, col: p }); curRow = st.rows.length - 1; note(curRow, 'rest'); }
+      else curRow = -1;
+      var subHtml = cur + ' − ' + prod + ' = ' + b(rem, p) + '. ';
+      var subTip = '';
+      if (rem > 0) {
+        subHtml += PL[p] + ' 모형이 ' + b(rem, p) + '개 남았어요.';
+        subTip = '남은 수(' + rem + ')는 나누는 수(' + d + ')보다 작아요. 크거나 같았다면 한 명에게 더 줄 수 있었다는 뜻이에요.';
+      } else {
+        subHtml += '남은 ' + PL[p] + ' 모형이 없어요.';
+        subTip = p < 2 ? '0이 남으면 세로셈에 0을 쓰지 않고 다음 자리로 넘어가요.' : '';
+      }
+      add({
+        kind: 'sub', title: '남은 ' + PL[p] + ' 모형을 세어요', html: subHtml, tip: subTip,
+        hl: curRow >= 0 ? [{ t: 'row', ri: curRow }] : [{ t: 'row', ri: pr }]
+      });
+      prevRem = rem;
+    }
+
+    // 마지막 나머지 줄
+    if (!(curRow >= 0 && st.rows[curRow].col === 2)) {
+      st.rows.push({ value: R, col: 2 }); curRow = st.rows.length - 1; note(curRow, 'rest');
+    }
+    var got = [];
+    for (var pp = qStart; pp < 3; pp++) got.push(PL[pp] + ' 모형 ' + b(st.person[pp], pp) + '개');
+    st.showVal = true;
+    st.eq = R ? n + ' ÷ ' + d + ' = ' + Q + ' … ' + R : n + ' ÷ ' + d + ' = ' + Q;
+    var qHl = [];
+    for (var c = qStart; c < 3; c++) qHl.push({ t: 'q', col: c });
+    if (R === 0) {
+      add({
+        kind: 'final', title: '똑같이 나누어졌어요!',
+        html: '남는 수 모형이 없어요. 한 명이 받은 것은 ' + got.join(', ') + ' → ' + b(Q) + '. 그래서 ' + n + ' ÷ ' + d + ' = ' + b(Q) + (hasB(Q) ? '이에요.' : '예요.'),
+        tip: '나머지가 0이면 <strong>나누어떨어진다</strong>고 해요.',
+        hl: qHl.concat([{ t: 'row', ri: curRow }])
+      });
+    } else {
+      add({
+        kind: 'final', title: '남은 ' + R + '개는 나머지예요',
+        html: '일 모형 ' + b(R, 2) + '개가 남았어요. ' + R + '개는 ' + d + '명에게 똑같이 나누어 줄 수 없어요 (' + R + ' &lt; ' + d + '). 이렇게 남은 수가 <strong>나머지</strong>예요. 한 명이 받은 것은 ' + got.join(', ') + ' → 몫 ' + b(Q) + '.',
+        tip: n + ' ÷ ' + d + ' = ' + Q + ' … ' + R + ' 라고 쓰고, “몫은 ' + Q + ', 나머지는 ' + R + '”라고 읽어요. 나머지는 언제나 나누는 수(' + d + ')보다 작아요.',
+        hl: qHl.concat([{ t: 'row', ri: curRow }])
+      });
+    }
+    st.eq = R ? d + ' × ' + Q + ' = ' + (d * Q) + ', ' + (d * Q) + ' + ' + R + ' = ' + n : d + ' × ' + Q + ' = ' + n;
+    add({
+      kind: 'check', title: '맞게 나누었는지 확인해요',
+      html: R
+        ? '친구 ' + d + '명이 받은 것을 모두 모으면 ' + d + ' × ' + Q + ' = ' + (d * Q) + '. 여기에 나머지 ' + J(R, '을', '를') + ' 더하면 ' + (d * Q) + ' + ' + R + ' = ' + b(n) + '. 처음 수와 같아요!'
+        : '친구 ' + d + '명이 받은 것을 모두 모으면 ' + d + ' × ' + Q + ' = ' + b(n) + '. 처음 수와 같아요!',
+      tip: '확인 방법: <strong>나누는 수 × 몫 + 나머지 = 나누어지는 수</strong>',
+      hl: [{ t: 'dvs' }].concat(qHl)
+    });
+
+    return { n: n, d: d, a: a, Q: Q, R: R, steps: steps, order: order, final: st, qStart: qStart };
+  }
+
+  // ---------- 세로셈 그리기 ----------
+  function hlKeys(step) {
+    var keys = {};
+    step.hl.forEach(function (h) {
+      if (h.t === 'div') for (var c = h.c0; c <= h.c1; c++) keys['d' + c] = 1;
+      else if (h.t === 'q') keys['q' + h.col] = 1;
+      else if (h.t === 'dvs') keys.dvs = 1;
+      else if (h.t === 'row' && step.state.rows[h.ri]) cellsOf(step.state.rows[h.ri]).forEach(function (c) { keys['r' + h.ri + 'c' + c.col] = 1; });
+    });
+    return keys;
+  }
+  function stateKeys(state) {
+    var keys = {};
+    state.q.forEach(function (v, c) { if (v != null) keys['q' + c] = 1; });
+    state.rows.forEach(function (row, ri) { cellsOf(row).forEach(function (c) { keys['r' + ri + 'c' + c.col] = 1; }); });
+    return keys;
+  }
+
+  function ldHTML(sim, state, o) {
+    o = o || {};
+    var hl = o.hl || {}, fresh = o.fresh || {}, inputs = o.inputs || null;
+    var totalRows = 2 + sim.final.rows.length;
+    var h = '<div class="ld" style="grid-template-rows:repeat(' + totalRows + ', var(--ch))">';
+    function cell(r, c, ch, key, unit, label) {
+      var gc = 3 + c;
+      if (inputs && inputs[key] != null) {
+        var info = inputs[key];
+        return '<div style="grid-row:' + r + ';grid-column:' + gc + ';display:grid"><input class="ld-in u-' + unit + '" id="in-' + key + '" data-key="' + key +
+          '" data-ord="' + info.ord + '" inputmode="numeric" maxlength="1" autocomplete="off" aria-label="' + label + '" value="' + (info.val || '') + '"></div>';
+      }
+      var cls = 'ld-c u-' + unit + (hl[key] ? ' hl' : '') + (fresh[key] ? ' pop' : '');
+      return '<div class="' + cls + '" style="grid-row:' + r + ';grid-column:' + gc + '">' + ch + '</div>';
+    }
+    h += '<div class="ld-c' + (hl.dvs ? ' hl' : '') + '" style="grid-row:2;grid-column:1">' + sim.d + '</div>';
+    h += '<div class="ld-paren" style="grid-row:2;grid-column:2"><svg viewBox="0 0 12 40" preserveAspectRatio="none" aria-hidden="true"><path d="M3 2 Q13 20 3 38"/></svg></div>';
+    h += '<div class="ld-bar" style="grid-row:2;grid-column:2/6"></div>';
+    sim.a.forEach(function (x, c) { h += cell(2, c, x, 'd' + c, PC[c]); });
+    for (var c = 0; c < 3; c++) {
+      if (state.q[c] != null) h += cell(1, c, state.q[c], 'q' + c, PC[c], '몫의 ' + PL[c] + '의 자리');
+      else if (o.qblank === c) h += '<div class="ld-blank" style="grid-row:1;grid-column:' + (3 + c) + '">비워요</div>';
+    }
+    state.rows.forEach(function (row, ri) {
+      cellsOf(row).forEach(function (cl) { h += cell(3 + ri, cl.col, cl.ch, 'r' + ri + 'c' + cl.col, PC[row.col], (ri + 1) + '번째 줄 ' + PL[cl.col] + '의 자리'); });
+      if (row.ul) h += '<div class="ld-ul" style="grid-row:' + (3 + ri) + ';grid-column:' + (3 + row.ul[0]) + '/' + (4 + row.ul[1]) + '"></div>';
+    });
+    (o.arrows || []).forEach(function (ar) {
+      if (ar.ri >= 1) h += '<div class="ld-arrow" style="grid-row:3/' + (3 + ar.ri) + ';grid-column:' + (3 + ar.col) + '"></div>';
+    });
+    h += '</div>';
+    if (o.eq != null) h += '<div class="ld-eq">' + (o.eq ? '<span>' + o.eq + '</span>' : '') + '</div>';
+    return h;
+  }
+
+  // ---------- 수 모형 무대 ----------
+  function blocks(p, count) {
+    var s = '';
+    for (var i = 0; i < count; i++) s += '<span class="blk b-' + PC[p] + '"></span>';
+    return s;
+  }
+  function stageHTML(sim, state) {
+    var h = '<div><div class="zone-label">나누어 줄 수 모형</div><div class="store">';
+    for (var p = 0; p < 3; p++) {
+      var cnt = state.store[p];
+      h += '<div class="srow' + (cnt ? '' : ' empty') + '" data-p="' + p + '"><div class="slabel">' + PL[p] + ' 모형<br><b>' + cnt + '</b>개</div><div class="sblocks">' + blocks(p, cnt) + '</div></div>';
+    }
+    h += '</div></div><div><div class="zone-label">친구 ' + sim.d + '명이 받은 수 모형</div><div class="people">';
+    for (var i = 0; i < sim.d; i++) {
+      h += '<div class="pbox" data-i="' + i + '"><div class="pname"><span class="face">' + (i + 1) + '</span>친구</div><div class="pblocks">';
+      for (var pp = 0; pp < 3; pp++) h += '<div class="pp" data-p="' + pp + '">' + blocks(pp, state.person[pp]) + '</div>';
+      h += '</div>' + (state.showVal ? '<div class="pval">' + sim.Q + '</div>' : '') + '</div>';
+    }
+    h += '</div></div>';
+    return h;
+  }
+
+  function fly(el, from, delay, dur, fadeIn) {
+    var to = el.getBoundingClientRect();
+    var dx = (from.left + from.width / 2) - (to.left + to.width / 2);
+    var dy = (from.top + from.height / 2) - (to.top + to.height / 2);
+    var s = fadeIn ? 0.4 : Math.max(0.5, Math.min(2.2, from.height / Math.max(1, to.height)));
+    el.animate([
+      { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(' + s + ')', opacity: fadeIn ? 0 : 1 },
+      { transform: 'none', opacity: 1 }
+    ], { duration: dur, delay: delay, easing: 'cubic-bezier(.25,.8,.3,1)', fill: 'backwards' });
+  }
+  function ghost(p, rect) {
+    var g = document.createElement('span');
+    g.className = 'blk ghost b-' + PC[p];
+    g.style.cssText = 'left:' + rect.left + 'px;top:' + rect.top + 'px;width:' + rect.width + 'px;height:' + rect.height + 'px;--c:' + (rect.height / 10) + 'px';
+    document.body.appendChild(g);
+    var an = g.animate([{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(1.25)' }], { duration: 420, easing: 'ease-out', fill: 'forwards' });
+    an.onfinish = function () { g.remove(); };
+  }
+
+  // ---------- 탐험기 ----------
+  function Explorer(root) {
+    this.root = root;
+    root.innerHTML =
+      '<div class="ex">' +
+      '<div class="ex-head"><div class="ex-expr"></div><div class="ex-story"></div>' +
+      '<div class="legend" aria-hidden="true"><span><i class="blk b-h"></i>백 모형 = 100</span><span><i class="blk b-t"></i>십 모형 = 10</span><span><i class="blk b-o"></i>일 모형 = 1</span></div></div>' +
+      '<div class="stage"></div>' +
+      '<div class="paper"></div>' +
+      '<div class="say"><div class="say-meta"></div><h3></h3><p></p><div class="tip"></div>' +
+      '<div class="nav"><button class="btn ghostly" data-go="-1">← 이전</button><div class="dots"></div><button class="btn" data-go="1">다음 →</button></div></div>' +
+      '</div>';
+    var q = function (s) { return root.querySelector(s); };
+    this.el = { expr: q('.ex-expr'), story: q('.ex-story'), stage: q('.stage'), paper: q('.paper'), meta: q('.say-meta'), title: q('.say h3'), text: q('.say p'), tip: q('.tip'), dots: q('.dots'), prev: q('[data-go="-1"]'), next: q('[data-go="1"]') };
+    var self = this;
+    this.el.prev.addEventListener('click', function () { self.go(-1); });
+    this.el.next.addEventListener('click', function () { self.go(1); });
+    this.el.dots.addEventListener('click', function (e) {
+      var t = e.target.closest('.dot'); if (!t) return;
+      self.i = +t.dataset.i; self.render(false);
+    });
+  }
+  Explorer.prototype.load = function (n, d) {
+    this.sim = simulate(n, d); this.i = 0;
+    this.el.expr.textContent = n + ' ÷ ' + d;
+    this.el.story.textContent = '수 모형 ' + J(n, '을', '를') + ' 친구 ' + d + '명에게 똑같이 나누어 주어요.';
+    var dots = '';
+    for (var i = 0; i < this.sim.steps.length; i++) dots += '<button class="dot" data-i="' + i + '" aria-label="' + (i + 1) + '단계로 가기"></button>';
+    this.el.dots.innerHTML = dots;
+    this.render(false);
+  };
+  Explorer.prototype.go = function (delta) {
+    var ni = this.i + delta;
+    if (ni < 0) return;
+    if (ni >= this.sim.steps.length) { if (delta > 0) { this.i = 0; this.render(false); } return; }
+    this.i = ni;
+    this.render(delta === 1);
+  };
+  Explorer.prototype.render = function (animate) {
+    var sim = this.sim, step = sim.steps[this.i], prev = this.i > 0 ? sim.steps[this.i - 1] : null, el = this.el;
+    var anim = animate && !reduced ? step.anim : null;
+    var sources = [];
+    if (anim) {
+      var sp = anim.type === 'share' ? anim.p : anim.from;
+      var take = anim.type === 'share' ? anim.per * sim.d : anim.cnt;
+      var blks = Array.prototype.slice.call(el.stage.querySelectorAll('.srow[data-p="' + sp + '"] .blk'));
+      sources = blks.slice(blks.length - take).map(function (x) { return x.getBoundingClientRect(); });
+    }
+    el.stage.innerHTML = stageHTML(sim, step.state);
+    if (anim && sources.length) {
+      if (anim.type === 'share') {
+        var total = anim.per * sim.d, stagger = Math.max(22, Math.min(110, 1500 / total));
+        for (var k = 0; k < anim.per; k++) {
+          for (var i = 0; i < sim.d; i++) {
+            var s = k * sim.d + i;
+            var list = el.stage.querySelectorAll('.pbox[data-i="' + i + '"] .pp[data-p="' + anim.p + '"] .blk');
+            var target = list[step.state.person[anim.p] - anim.per + k];
+            if (target && sources[s]) fly(target, sources[s], s * stagger, 520, false);
+          }
+        }
+      } else {
+        sources.forEach(function (r) { ghost(anim.from, r); });
+        var nb = el.stage.querySelectorAll('.srow[data-p="' + anim.to + '"] .blk');
+        var newCount = anim.cnt * 10;
+        for (var j = 0; j < newCount; j++) {
+          var t = nb[nb.length - newCount + j];
+          if (t) fly(t, sources[Math.floor(j / 10)], 160 + j * Math.max(12, Math.min(40, 900 / newCount)), 520, true);
+        }
+      }
+    }
+    var fresh = {};
+    if (animate && prev) {
+      var before = stateKeys(prev.state), now = stateKeys(step.state);
+      for (var key in now) if (!before[key]) fresh[key] = 1;
+      // 같은 줄에 숫자가 덧붙는 경우(내려 쓰기)도 새 칸으로 친다
+    }
+    el.paper.innerHTML = ldHTML(sim, step.state, { hl: hlKeys(step), fresh: fresh, arrows: step.arrows, qblank: step.qblank, eq: step.state.eq });
+    el.meta.textContent = (this.i + 1) + ' / ' + sim.steps.length + '단계';
+    el.title.textContent = step.title;
+    el.text.innerHTML = step.html;
+    el.tip.innerHTML = step.tip;
+    el.prev.disabled = this.i === 0;
+    el.next.textContent = this.i === sim.steps.length - 1 ? '처음부터 ↺' : '다음 →';
+    var dots = el.dots.children;
+    for (var di = 0; di < dots.length; di++) dots[di].className = 'dot' + (di < this.i ? ' done' : '') + (di === this.i ? ' cur' : '');
+  };
+
+  // ---------- 화면 전환 ----------
+  var views = { learn: document.getElementById('v-learn'), practice: document.getElementById('v-practice') };
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+  var current = 'learn';
+  function show(name) {
+    if (['learn', 'no-remainder', 'remainder'].indexOf(name) < 0) name = 'learn';
+    current = name;
+    tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.view === name)); });
+    views.learn.hidden = name !== 'learn';
+    views.practice.hidden = name === 'learn';
+    if (name !== 'learn') renderPractice();
+  }
+  tabs.forEach(function (t) {
+    t.addEventListener('click', function () {
+      if (location.hash !== '#' + t.dataset.view) { try { history.replaceState(null, '', '#' + t.dataset.view); } catch (e) {} }
+      show(t.dataset.view);
+      window.scrollTo(0, 0);
+    });
+  });
+  window.addEventListener('hashchange', function () { show(location.hash.slice(1)); });
+
+  // ---------- 배우기 ----------
+  var learnEx = new Explorer(document.getElementById('learnEx'));
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.picker .chip[data-n]'));
+  function pick(n, d) {
+    chips.forEach(function (c) { c.setAttribute('aria-pressed', String(+c.dataset.n === n && +c.dataset.d === d)); });
+    learnEx.load(n, d);
+  }
+  chips.forEach(function (c) { c.addEventListener('click', function () { document.getElementById('customErr').hidden = true; pick(+c.dataset.n, +c.dataset.d); }); });
+  document.getElementById('custom').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var n = +document.getElementById('cn').value, d = +document.getElementById('cd').value, err = document.getElementById('customErr');
+    if (!(n >= 100 && n <= 999) || !(d >= 2 && d <= 9)) {
+      err.textContent = '나누어지는 수는 100부터 999까지, 나누는 수는 2부터 9까지 써 주세요.';
+      err.hidden = false; return;
+    }
+    err.hidden = true;
+    pick(n, d);
+  });
+  pick(465, 5);
+
+  // ---------- 연습 ----------
+  function ri(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+  // A: 몫이 세 자리, B: 몫이 두 자리(백의 자리를 비움), C: 몫에 0이 있음
+  var PLAN = ['A', 'B', 'A', 'B', 'C', 'B', 'A', 'B', 'C', 'B'];
+  function genOne(withRem, k, list) {
+    var want = PLAN[k];
+    for (var t = 0; t < 4000; t++) {
+      var d = k < 3 ? ri(2, 5) : ri(3, 9);
+      var r = withRem ? ri(1, d - 1) : 0;
+      var n = ri(100, 999);
+      n = n - (n % d) + r;
+      if (n < 100 || n > 999) continue;
+      var Q = (n - r) / d, a0 = Math.floor(n / 100);
+      var type = a0 < d ? 'B' : (String(Q).indexOf('0') >= 0 ? 'C' : 'A');
+      if (type !== want) continue;
+      if (want !== 'C' && String(Q).indexOf('0') >= 0) continue;
+      var sim = simulate(n, d);
+      if (!sim.steps.some(function (s) { return s.kind === 'trade' && s.state.q.some(function (v) { return v != null; }); }) && want !== 'C') continue;
+      if (list.some(function (e) { return e.n === n && e.d === d; })) continue;
+      return { n: n, d: d, sim: sim, entries: {}, quick: { q: '', r: '' }, solved: false, wrongTries: 0, hinted: false };
+    }
+    var fb = withRem ? { n: 467, d: 5 } : { n: 465, d: 5 };
+    return { n: fb.n, d: fb.d, sim: simulate(fb.n, fb.d), entries: {}, quick: { q: '', r: '' }, solved: false, wrongTries: 0, hinted: false };
+  }
+  function newRound(withRem) {
+    var list = [];
+    for (var k = 0; k < 10; k++) list.push(genOne(withRem, k, list));
+    return { withRem: withRem, list: list, i: 0 };
+  }
+  var rounds = { 'no-remainder': newRound(false), 'remainder': newRound(true) };
+  var mode = 'grid';
+  try { var sm = localStorage.getItem('div-mode'); if (sm === 'grid' || sm === 'quick') mode = sm; } catch (e) {}
+
+  var $ = function (id) { return document.getElementById(id); };
+  var prWork = $('prWork'), prFeedback = $('prFeedback');
+
+  function round() { return rounds[current]; }
+  function prob() { var r = round(); return r.list[r.i]; }
+
+  function renderPractice() {
+    var r = round();
+    if (!r) return;
+    $('prTitle').textContent = r.withRem ? '연습 ② 나머지가 있는 나눗셈' : '연습 ① 나머지가 없는 나눗셈';
+    $('prSub').textContent = r.withRem
+      ? '마지막에 남는 수가 나머지예요. 나머지는 나누는 수보다 작아야 해요.'
+      : '남는 것 없이 똑같이 나누어떨어지는 문제예요. 마지막 줄은 0이 돼요.';
+    $('modeGrid').setAttribute('aria-pressed', String(mode === 'grid'));
+    $('modeQuick').setAttribute('aria-pressed', String(mode === 'quick'));
+    var ph = '';
+    r.list.forEach(function (p, i) {
+      var cls = 'pdot' + (i === r.i ? ' cur' : '') + (p.solved ? (p.wrongTries === 0 && !p.hinted ? ' star' : ' ok') : '');
+      ph += '<li><button class="' + cls + '" data-i="' + i + '" aria-label="' + (i + 1) + '번 문제' + (p.solved ? ' (해결)' : '') + '"' + (i === r.i ? ' aria-current="true"' : '') + '>' + (i + 1) + '</button></li>';
+    });
+    $('prProgress').innerHTML = ph;
+    showProblem();
+    renderDone();
+  }
+
+  function showProblem() {
+    var r = round(), p = prob(), sim = p.sim;
+    $('prNum').textContent = (r.i + 1) + '번 문제';
+    $('prExpr').textContent = p.n + ' ÷ ' + p.d;
+    $('prStory').textContent = mode === 'grid'
+      ? '빈칸에 숫자를 하나씩 써서 세로셈을 완성해요. 숫자를 쓰면 다음 칸으로 넘어가요.'
+      : (r.withRem ? '몫과 나머지를 써요. 세로셈은 공책에 풀어도 돼요.' : '몫을 써요. 세로셈은 공책에 풀어도 돼요.');
+    if (mode === 'grid') {
+      var inputs = {};
+      sim.order.forEach(function (o, idx) { inputs[o.key] = { ord: idx, val: p.entries[o.key] || '' }; });
+      prWork.innerHTML = ldHTML(sim, sim.final, { inputs: inputs });
+      sim.order.forEach(function (o) {
+        var inp = $('in-' + o.key);
+        inp.dataset.ans = answerOf(sim, o.key);
+        inp.dataset.kind = o.kind;
+        if (p.solved) { inp.disabled = true; inp.classList.add('good'); }
+      });
+    } else {
+      prWork.innerHTML = '<div class="quick"><div class="quick-row"><span>' + p.n + ' ÷ ' + p.d + ' =</span><input id="qq" inputmode="numeric" maxlength="3" aria-label="몫" value="' + p.quick.q + '">' +
+        (r.withRem ? '<span>…</span><input id="qr" inputmode="numeric" maxlength="1" aria-label="나머지" value="' + p.quick.r + '">' : '') + '</div>' +
+        '<div class="quick-labels"><span>몫</span>' + (r.withRem ? '<span>나머지</span>' : '') + '</div></div>';
+      if (p.solved) prWork.querySelectorAll('input').forEach(function (x) { x.disabled = true; x.classList.add('good'); });
+    }
+    prFeedback.className = 'feedback' + (p.solved ? ' good' : '');
+    prFeedback.innerHTML = p.solved ? successHTML(p) : '';
+    $('prCheck').hidden = p.solved;
+    $('prClear').hidden = p.solved;
+    $('prNext').hidden = !p.solved || allSolved();
+  }
+
+  function answerOf(sim, key) {
+    if (key[0] === 'q') return String(sim.final.q[+key.slice(1)]);
+    var m = /^r(\d+)c(\d+)$/.exec(key), row = sim.final.rows[+m[1]], col = +m[2];
+    var s = String(row.value);
+    return s[col - (row.col - s.length + 1)];
+  }
+
+  function successHTML(p) {
+    var Q = p.sim.Q, R = p.sim.R, d = p.d;
+    var star = p.wrongTries === 0 && !p.hinted;
+    var head = star ? '<strong>정답이에요! 한 번에 맞혔어요.</strong>' : '<strong>정답이에요!</strong>';
+    var check = R ? d + ' × ' + Q + ' = ' + (d * Q) + ', ' + (d * Q) + ' + ' + R + ' = ' + p.n + ' ✓' : d + ' × ' + Q + ' = ' + p.n + ' ✓';
+    var ans = R ? '몫 ' + Q + ', 나머지 ' + R : '몫 ' + Q;
+    return head + ' ' + ans + '<span class="check">확인: ' + check + '</span>';
+  }
+
+  function allSolved() { return round().list.every(function (p) { return p.solved; }); }
+  function renderDone() {
+    var r = round(), box = $('prDone');
+    if (!allSolved()) { box.hidden = true; return; }
+    var stars = r.list.filter(function (p) { return p.wrongTries === 0 && !p.hinted; }).length;
+    box.innerHTML = '<h3>10문제를 모두 풀었어요!</h3><p>힌트 없이 한 번에 맞힌 문제: <strong>' + stars + '개</strong> / 10개</p>' +
+      '<button class="btn" id="prAgain">새 문제 10개 풀기</button>';
+    box.hidden = false;
+    $('prAgain').addEventListener('click', function () { rounds[current] = newRound(r.withRem); renderPractice(); window.scrollTo(0, 0); });
+  }
+
+  function solve(p) {
+    p.solved = true;
+    renderPractice();
+    var next = $('prNext');
+    if (!next.hidden) next.focus();
+  }
+
+  function check() {
+    var p = prob(), r = round();
+    if (p.solved) return;
+    if (mode === 'quick') {
+      var qi = $('qq'), rIn = $('qr');
+      var qv = qi.value.trim(), rv = rIn ? rIn.value.trim() : '0';
+      if (!qv || (rIn && !rv)) { prFeedback.className = 'feedback bad'; prFeedback.innerHTML = '빈칸을 모두 채워 주세요.'; return; }
+      var qOk = +qv === p.sim.Q, rOk = !rIn || +rv === p.sim.R;
+      qi.className = qOk ? 'good' : 'bad';
+      if (rIn) rIn.className = rOk ? 'good' : 'bad';
+      if (qOk && rOk) { solve(p); return; }
+      p.wrongTries++;
+      var msg;
+      if (rIn && +rv >= p.d) msg = '나머지 ' + J(+rv, '은', '는') + ' 나누는 수 ' + p.d + '보다 작아야 해요. 한 명에게 더 나누어 줄 수 있어요!';
+      else if (!qOk && +qv * p.d > p.n) msg = p.d + ' × ' + qv + ' = ' + J(+qv * p.d, '은', '는') + ' ' + p.n + '보다 커요. 몫이 너무 커요.';
+      else if (!qOk) msg = '몫을 다시 계산해 봐요. 큰 자리부터 하나씩 나누어 줘요.';
+      else msg = '몫은 맞았어요! ' + p.d + ' × ' + p.sim.Q + ' = ' + J(p.d * p.sim.Q, '이니까', '니까') + ', ' + p.n + '에서 빼면 나머지는 얼마일까요?';
+      prFeedback.className = 'feedback bad';
+      prFeedback.innerHTML = msg + ' <br>막히면 ‘수 모형 힌트’를 눌러 봐요.';
+      return;
+    }
+    var ins = Array.prototype.slice.call(prWork.querySelectorAll('input.ld-in')).sort(function (x, y) { return x.dataset.ord - y.dataset.ord; });
+    var empty = 0, firstWrong = null;
+    ins.forEach(function (inp) {
+      inp.classList.remove('good', 'bad', 'empty');
+      if (!inp.value) { empty++; inp.classList.add('empty'); }
+      else if (inp.value === inp.dataset.ans) inp.classList.add('good');
+      else { inp.classList.add('bad'); if (!firstWrong) firstWrong = inp; }
+    });
+    if (!empty && !firstWrong) { solve(p); return; }
+    if (firstWrong) p.wrongTries++;
+    var m;
+    if (firstWrong) {
+      var kind = firstWrong.dataset.kind;
+      if (kind === 'q') {
+        var col = +firstWrong.dataset.key.slice(1);
+        m = '빨간 칸을 다시 봐요. 몫의 ' + PL[col] + '의 자리에는 ‘' + p.d + ' × □’가 지금 나누는 수보다 크지 않은 가장 큰 □를 써요.';
+      } else if (kind === 'prod') m = '빨간 칸을 다시 봐요. 나눈 수 모형 개수는 ‘나누는 수(' + p.d + ') × 그 자리의 몫’이에요.';
+      else if (kind === 'rest') m = '빨간 칸을 다시 봐요. 위의 수에서 바로 위 줄(나누어 준 수)을 빼면 남은 수예요.';
+      else m = '빨간 칸을 다시 봐요. 남은 수 옆에 다음 자리 숫자를 내려 썼나요?';
+    } else m = '빈칸이 ' + empty + '개 남았어요. 점선 칸을 채워 주세요.';
+    prFeedback.className = 'feedback bad';
+    prFeedback.innerHTML = m;
+  }
+
+  prWork.addEventListener('input', function (e) {
+    var t = e.target; if (t.tagName !== 'INPUT') return;
+    t.value = t.value.replace(/\D/g, '').slice(-(+t.getAttribute('maxlength') || 1));
+    t.classList.remove('good', 'bad', 'empty');
+    var p = prob();
+    if (t.classList.contains('ld-in')) {
+      p.entries[t.dataset.key] = t.value;
+      if (t.value) {
+        var nx = prWork.querySelector('input.ld-in[data-ord="' + (+t.dataset.ord + 1) + '"]');
+        if (nx) { nx.focus(); nx.select(); }
+      }
+    } else if (t.id === 'qq') p.quick.q = t.value;
+    else if (t.id === 'qr') p.quick.r = t.value;
+  });
+  prWork.addEventListener('focusin', function (e) { if (e.target.tagName === 'INPUT') e.target.select(); });
+  prWork.addEventListener('keydown', function (e) {
+    var t = e.target; if (t.tagName !== 'INPUT') return;
+    if (e.key === 'Enter') { e.preventDefault(); check(); return; }
+    if (t.classList.contains('ld-in') && e.key === 'Backspace' && !t.value) {
+      var pv = prWork.querySelector('input.ld-in[data-ord="' + (+t.dataset.ord - 1) + '"]');
+      if (pv) { e.preventDefault(); pv.focus(); pv.select(); }
+    }
+  });
+  $('prCheck').addEventListener('click', check);
+  $('prClear').addEventListener('click', function () {
+    var p = prob(); p.entries = {}; p.quick = { q: '', r: '' }; showProblem();
+    var f = prWork.querySelector('input'); if (f) f.focus();
+  });
+  $('prNext').addEventListener('click', function () {
+    var r = round(), n = r.list.length;
+    for (var k = 1; k <= n; k++) { var j = (r.i + k) % n; if (!r.list[j].solved) { r.i = j; break; } }
+    renderPractice();
+    var f = prWork.querySelector('input:not(:disabled)'); if (f) f.focus();
+  });
+  $('prProgress').addEventListener('click', function (e) {
+    var t = e.target.closest('.pdot'); if (!t) return;
+    round().i = +t.dataset.i; renderPractice();
+  });
+  [$('modeGrid'), $('modeQuick')].forEach(function (bt) {
+    bt.addEventListener('click', function () {
+      mode = bt.dataset.mode;
+      try { localStorage.setItem('div-mode', mode); } catch (e) {}
+      renderPractice();
+    });
+  });
+
+  // ---------- 힌트 ----------
+  var dlg = $('hintDlg'), hintEx = new Explorer($('hintEx'));
+  $('prHint').addEventListener('click', function () {
+    var p = prob();
+    if (!p.solved) p.hinted = true;
+    hintEx.load(p.n, p.d);
+    $('hintTitle').textContent = p.n + ' ÷ ' + p.d + ' 수 모형으로 살펴보기';
+    if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
+  });
+  $('hintClose').addEventListener('click', function () { if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); });
+  dlg.addEventListener('click', function (e) { if (e.target === dlg && dlg.close) dlg.close(); });
+
+  // ← → 키로 단계 넘기기
+  document.addEventListener('keydown', function (e) {
+    var tg = e.target;
+    if (tg && (tg.tagName === 'INPUT' || tg.tagName === 'TEXTAREA')) return;
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    var ex = dlg.open ? hintEx : (current === 'learn' ? learnEx : null);
+    if (!ex) return;
+    e.preventDefault();
+    ex.go(e.key === 'ArrowRight' ? 1 : -1);
+  });
+
+  show(location.hash.slice(1));
+})();
+</script>
+</body>
+</html>
